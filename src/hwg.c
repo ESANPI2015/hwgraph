@@ -1,22 +1,11 @@
 #include "hwg.h"
 #include <string.h>
 
-/*Assign an ID of possibly a different entity to a node*/
-hw_graph_error hw_node_assign_id(hw_node_t *node, const unsigned int id)
-{
-    if (node->assignedObjects >= HWG_MAX_OBJECTS)
-        return HW_GRAPH_ERR_OOR;
-
-    node->assignedObjectIds[node->assignedObjects] = id;
-    node->assignedObjects++;
-    return HW_GRAPH_ERR_NONE;
-}
-
 /*Assigns a subgraph to a node, creating a port for each unconnected port in subgraph*/
 hw_graph_error hw_node_assign_subgraph(hw_node_subgraph_t *node, hw_graph_t *subgraph)
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
-    hw_base_node_t *current;
+    hw_node_t *current;
     priority_list_iterator_t it;
     unsigned int i;
 
@@ -33,15 +22,25 @@ hw_graph_error hw_node_assign_subgraph(hw_node_subgraph_t *node, hw_graph_t *sub
         /*Find an unconnected port*/
         for (i = 0; i < current->numPorts; ++i)
             if (!current->ports[i].edge)
+            {
                 /*If some has been found: Add a port with same id, type and name to the hosting SUBGRAPH node*/
-                if ((err = hw_node_add_port(&node->base, current->ports[i].id, current->ports[i].type, current->ports[i].name)) != HW_GRAPH_ERR_NONE)
-                    return err;
+                err = hw_node_add_port(&node->base, current->ports[i].id, current->ports[i].type, current->ports[i].name);
+                switch (err)
+                {
+                    case HW_GRAPH_ERR_NONE:
+                    case HW_GRAPH_ERR_DUPLICATE_PORT:
+                        /*If a port of that id exists, so what? :D*/
+                        break;
+                    default:
+                        return err;
+                }
+            }
     }
 
     return err;
 }
 
-hw_graph_error hw_node_add_port(hw_base_node_t *node, const unsigned int id, const hw_port_type_t type, const char *name)
+hw_graph_error hw_node_add_port(hw_node_t *node, const unsigned int id, const hw_port_type_t type, const char *name)
 {
     if (hw_node_get_port(node, id))
         return HW_GRAPH_ERR_DUPLICATE_PORT;
@@ -58,7 +57,7 @@ hw_graph_error hw_node_add_port(hw_base_node_t *node, const unsigned int id, con
     return HW_GRAPH_ERR_NONE;
 }
 
-hw_port_t *hw_node_get_port(hw_base_node_t *node, const unsigned id)
+hw_port_t *hw_node_get_port(hw_node_t *node, const unsigned id)
 {
     unsigned int i;
 
@@ -68,9 +67,9 @@ hw_port_t *hw_node_get_port(hw_base_node_t *node, const unsigned id)
     return NULL;
 }
 
-hw_base_node_t *hw_graph_get_node(hw_graph_t *graph, const unsigned id)
+hw_node_t *hw_graph_get_node(hw_graph_t *graph, const unsigned id)
 {
-    hw_base_node_t *node;
+    hw_node_t *node;
     priority_list_iterator_t it;
 
     for (node = priority_list_first(graph->nodes, &it);
@@ -97,7 +96,7 @@ hw_edge_t *hw_graph_get_edge(hw_graph_t *graph, const unsigned id)
 hw_graph_error hw_graph_create_node(hw_graph_t *graph, const unsigned int id, const hw_node_type_t type, const char *name)
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
-    hw_base_node_t *newNode;
+    hw_node_t *newNode;
     priority_list_iterator_t it;
 
     if (hw_graph_get_node(graph, id))
@@ -115,7 +114,7 @@ hw_graph_error hw_graph_create_node(hw_graph_t *graph, const unsigned int id, co
     newNode->type = type;
     strncpy(newNode->name, name, HWG_MAX_STRING_LENGTH);
 
-    priority_list_insert(graph->nodes, newNode, newNode->costs, &it);
+    priority_list_insert(graph->nodes, newNode, 0, &it);
 
     return err;
 }
@@ -124,7 +123,7 @@ hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, co
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
     hw_edge_t *newEdge;
-    hw_base_node_t *node1, *node2;
+    hw_node_t *node1, *node2;
     priority_list_iterator_t it;
 
     if (hw_graph_get_edge(graph, id))
@@ -147,7 +146,7 @@ hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, co
     newEdge->ports[0] = portId1;
     newEdge->ports[1] = portId2;
 
-    priority_list_insert(graph->edges, newEdge, newEdge->costs, &it);
+    priority_list_insert(graph->edges, newEdge, 0, &it);
 
     return err;
 }
@@ -155,7 +154,7 @@ hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, co
 hw_graph_error hw_graph_clone(hw_graph_t *graph, const hw_graph_t *src)
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
-    hw_base_node_t *node;
+    hw_node_t *node;
     hw_edge_t *edge;
     priority_list_iterator_t it;
     priority_list_t *nodes, *edges;
@@ -184,7 +183,7 @@ hw_graph_error hw_graph_clone(hw_graph_t *graph, const hw_graph_t *src)
     return err;
 }
 
-hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_base_node_t *node)
+hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_node_t *node)
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
     hw_node_t *newNode;
@@ -203,9 +202,9 @@ hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_base_node_t *node
     memcpy(newNode, node, sizeof(hw_node_t));
 
     /*Resolve edge pointers in ports of node*/
-    for (i = 0; i < newNode->base.numPorts; ++i)
-        newNode->base.ports[i].edge = hw_graph_get_edge(graph, node->ports[i].edge->id);
-    priority_list_insert(graph->nodes, newNode, newNode->base.costs, &it);
+    for (i = 0; i < newNode->numPorts; ++i)
+        newNode->ports[i].edge = hw_graph_get_edge(graph, node->ports[i].edge->id);
+    priority_list_insert(graph->nodes, newNode, 0, &it);
 
     return err;
 }
@@ -251,7 +250,7 @@ hw_graph_error hw_graph_clone_subgraph_node(hw_graph_t *graph, const hw_node_sub
     /*Resolve edge pointers in ports of node*/
     for (i = 0; i < newNode->base.numPorts; ++i)
         newNode->base.ports[i].edge = hw_graph_get_edge(graph, node->base.ports[i].edge->id);
-    priority_list_insert(graph->nodes, newNode, newNode->base.costs, &it);
+    priority_list_insert(graph->nodes, newNode, 0, &it);
 
     return err;
 }
@@ -273,7 +272,7 @@ hw_graph_error hw_graph_clone_edge(hw_graph_t *graph, const hw_edge_t *edge)
     /*Resolve pointers to nodes*/
     newEdge->nodes[0] = hw_graph_get_node(graph, edge->nodes[0]->id);
     newEdge->nodes[1] = hw_graph_get_node(graph, edge->nodes[1]->id);
-    priority_list_insert(graph->edges, newEdge, newEdge->costs, &it);
+    priority_list_insert(graph->edges, newEdge, 0, &it);
 
     return err;
 }
@@ -283,8 +282,6 @@ hw_graph_error hw_graph_init(hw_graph_t *graph, const unsigned int id, const cha
     graph->id = id;
     strncpy(graph->name, name, HWG_MAX_STRING_LENGTH);
     strncpy(graph->subName, subName, HWG_MAX_STRING_LENGTH);
-    graph->maxCosts = 0;
-    graph->costs = 0;
 
     priority_list_init(&graph->nodes);
     if (!graph->nodes)
@@ -301,7 +298,7 @@ hw_graph_error hw_graph_init(hw_graph_t *graph, const unsigned int id, const cha
 void hw_graph_destroy(hw_graph_t *graph)
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
-    hw_base_node_t *node;
+    hw_node_t *node;
     hw_edge_t *edge;
     priority_list_iterator_t it;
 

@@ -38,7 +38,7 @@ static int emit_str(yaml_emitter_t *emitter, const char *s) {
 
 static int emit_node_list(yaml_emitter_t *emitter, priority_list_t *node_list) {
   yaml_event_t event;
-  hw_base_node_t *current_node;
+  hw_node_t *current_node;
   priority_list_iterator_t it;
   size_t i;
   int ok = 1;

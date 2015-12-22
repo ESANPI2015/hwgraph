@@ -181,6 +181,7 @@ static hwg_parse_error parse_nodes(yaml_parser_t *parser, hw_graph_t *g) {
 
 static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
   hwg_parse_error err;
+  hw_graph_error gerr;
   yaml_event_t event;
   bool gotId = false;
   bool gotType = false;
@@ -188,6 +189,7 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
   bool gotPorts = false;
   hw_node_t node;
   hw_graph_t subgraph;
+  hw_node_subgraph_t subNode;
 
   err = get_event(parser, &event, YAML_SCALAR_EVENT); /*Go to first SCALAR*/
   do {
@@ -195,25 +197,25 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
           if(gotId) {
             fprintf(stderr, "HWG_PARSE_NODE: Multiple \"id\" sections.\n");
           }
-          err = parse_node_id(parser, &node.base.id);
+          err = parse_node_id(parser, &node.id);
           gotId = true;
         } else if(strcmp((const char*)event.data.scalar.value, "type") == 0) {
           if(gotType) {
             fprintf(stderr, "HWG_PARSE_NODE: Multiple \"type\" sections.\n");
           }
-          err = parse_node_type(parser, &node.base.type);
+          err = parse_node_type(parser, &node.type);
           gotType = true;
         } else if(strcmp((const char*)event.data.scalar.value, "ports") == 0) {
           if(gotPorts) {
             fprintf(stderr, "HWG_PARSE_NODE: Multiple \"ports\" sections.\n");
           }
-          err = parse_node_ports(parser, node.base.ports, &node.base.numPorts);
+          err = parse_node_ports(parser, node.ports, &node.numPorts);
           gotPorts = true;
         } else if(strcmp((const char*)event.data.scalar.value, "name") == 0) {
           if(gotName) {
             fprintf(stderr, "HWG_PARSE_NODE: Multiple \"name\" sections.\n");
           }
-          err = get_string(parser, node.base.name);
+          err = get_string(parser, node.name);
           gotName = true;
         } else {
           skip_node(parser, &event);
@@ -238,23 +240,51 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
       fprintf(stderr, "HWG_PARSE_NODE: No type found\n");
       return HWG_PARSE_ERR_MISSING_TYPE;
   }
-  if (!gotPorts || node.base.numPorts < 1)
+  if (!gotPorts || node.numPorts < 1)
   {
       fprintf(stderr, "HWG_PARSE_NODE: No port found\n");
       return HWG_PARSE_ERR_MISSING_PORTS;
   }
 
-  /*Clone node*/
-  if (hw_graph_clone_node(g, &node.base) != HW_GRAPH_ERR_NONE)
-      return HWG_PARSE_ERR_UNKNOWN;
 
-  /*TODO: Special handling for SUBGRAPH nodes!*/
-  if (node.base.type == HW_NODE_TYPE_SUBGRAPH)
+  if (node.type == HW_NODE_TYPE_SUBGRAPH)
   {
-      hw_graph_init(&subgraph, node.base.id, node.base.name, g->subName);
-      hw_graph_from_yaml_file(node.base.name, &subgraph);
+      /*Special handling for SUBGRAPH nodes!*/
+      memcpy(&subNode.base, &node, sizeof(hw_node_t));
+      gerr = hw_graph_init(&subgraph, node.id, node.name, g->subName);
+      if (gerr != HW_GRAPH_ERR_NONE)
+      {
+          fprintf(stderr, "HWG_PARSE_NODE: Graph init failed (%u)\n", (unsigned int)gerr);
+          return HWG_PARSE_ERR_UNKNOWN;
+      }
+      err = hw_graph_from_yaml_file(node.name, &subgraph);
+      if (err != HWG_PARSE_ERR_NONE)
+      {
+          hw_graph_destroy(&subgraph);
+          return err;
+      }
+      gerr = hw_node_assign_subgraph(&subNode, &subgraph);
+      if (gerr != HW_GRAPH_ERR_NONE)
+      {
+          fprintf(stderr, "HWG_PARSE_NODE: Graph assign failed (%u)\n", (unsigned int)gerr);
+          hw_graph_destroy(&subgraph);
+          return HWG_PARSE_ERR_UNKNOWN;
+      }
+      gerr = hw_graph_clone_subgraph_node(g, &subNode);
+      if (gerr != HW_GRAPH_ERR_NONE)
+      {
+          fprintf(stderr, "HWG_PARSE_NODE: Could not clone subgraph node (%u)\n", (unsigned int)gerr);
+          hw_graph_destroy(&subgraph);
+          return HWG_PARSE_ERR_UNKNOWN;
+      }
+  } else {
+      /*Clone node*/
+      if ((gerr = hw_graph_clone_node(g, &node)) != HW_GRAPH_ERR_NONE)
+      {
+          fprintf(stderr, "HWG_PARSE_NODE: Could not clone node (%u)\n", (unsigned int)gerr);
+          return HWG_PARSE_ERR_UNKNOWN;
+      }
   }
-
 
   return err;
 }

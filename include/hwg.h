@@ -25,6 +25,8 @@ const char *hw_node_type_str[HW_NODE_TYPES] =
 
 typedef enum {
     HW_PORT_TYPE_NOT_SPEC = 0,
+    HW_PORT_TYPE_SOURCE,
+    HW_PORT_TYPE_SINK,
     HW_PORT_TYPE_NDLCOM,
     HW_PORT_TYPES
 } hw_port_type_t;
@@ -32,6 +34,8 @@ typedef enum {
 const char *hw_port_type_str[HW_PORT_TYPES] =
 {
     "UNSPEC",
+    "SOURCE",
+    "SINK",
     "NDLCOM"
 };
 
@@ -52,38 +56,23 @@ typedef struct {
 
     unsigned int numPorts;
     hw_port_t ports[HWG_MAX_PORTS];
-
-    unsigned int maxCosts;
-    unsigned int costs;
-} hw_base_node_t;
-
-typedef struct {
-    hw_base_node_t base;
-    unsigned int assignedObjects;
-    unsigned int assignedObjectIds[HWG_MAX_OBJECTS];
 } hw_node_t;
 
 typedef struct hw_edge_t {
     unsigned int id;
     char name[HWG_MAX_STRING_LENGTH];
 
-    hw_base_node_t *nodes[2];
+    hw_node_t *nodes[2];
     unsigned int ports[2];
-
-    unsigned int maxCosts;
-    unsigned int costs;
 } hw_edge_t;
 
 typedef struct {
     unsigned int id;
     char name[HWG_MAX_STRING_LENGTH];
+    char subName[HWG_MAX_STRING_LENGTH];
 
-    unsigned int maxCosts;
-    unsigned int costs;
     priority_list_t *nodes;
     priority_list_t *edges;
-
-    char subName[HWG_MAX_STRING_LENGTH];
 } hw_graph_t;
 
 typedef enum {
@@ -100,24 +89,22 @@ typedef enum {
 } hw_graph_error;
 
 typedef struct {
-    hw_base_node_t base;
+    hw_node_t base;
     hw_graph_t *subgraph;
 } hw_node_subgraph_t;
 
-hw_graph_error hw_node_assign_id(hw_node_t *node, const unsigned int id);
 hw_graph_error hw_node_assign_subgraph(hw_node_subgraph_t *node, hw_graph_t *subgraph);
+hw_graph_error hw_node_add_port(hw_node_t *node, const unsigned int id, const hw_port_type_t type, const char *name);
+hw_port_t *hw_node_get_port(hw_node_t *node, const unsigned id);
 
-hw_graph_error hw_node_add_port(hw_base_node_t *node, const unsigned int id, const hw_port_type_t type, const char *name);
-hw_port_t *hw_node_get_port(hw_base_node_t *node, const unsigned id);
-
-hw_base_node_t *hw_graph_get_node(hw_graph_t *graph, const unsigned id);
+hw_node_t *hw_graph_get_node(hw_graph_t *graph, const unsigned id);
 hw_edge_t *hw_graph_get_edge(hw_graph_t *graph, const unsigned id);
 
 hw_graph_error hw_graph_create_node(hw_graph_t *graph, const unsigned int id, const hw_node_type_t type, const char *name);
 hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, const char *name, const unsigned int nodeId1, const unsigned int portId1, const unsigned int nodeId2, const unsigned int portId2); 
 
 hw_graph_error hw_graph_clone(hw_graph_t *graph, const hw_graph_t *src);
-hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_base_node_t *node);
+hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_node_t *node);
 hw_graph_error hw_graph_clone_subgraph_node(hw_graph_t *graph, const hw_node_subgraph_t *node);
 hw_graph_error hw_graph_clone_edge(hw_graph_t *graph, const hw_edge_t *edge);
 
