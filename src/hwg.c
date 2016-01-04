@@ -1,6 +1,22 @@
 #include "hwg.h"
 #include <string.h>
 
+const char *hw_node_type_str[HW_NODE_TYPES] =
+{
+    "UNSPEC",
+    "CONVENTIONAL",
+    "FPGA",
+    "SUBGRAPH"
+};
+
+const char *hw_port_type_str[HW_PORT_TYPES] =
+{
+    "UNSPEC",
+    "SOURCE",
+    "SINK",
+    "NDLCOM"
+};
+
 /*Assigns a subgraph to a node, creating a port for each unconnected port in subgraph*/
 hw_graph_error hw_node_assign_subgraph(hw_node_subgraph_t *node, hw_graph_t *subgraph)
 {
@@ -124,6 +140,7 @@ hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, co
     hw_graph_error err = HW_GRAPH_ERR_NONE;
     hw_edge_t *newEdge;
     hw_node_t *node1, *node2;
+    hw_port_t *port1, *port2;
     priority_list_iterator_t it;
 
     if (hw_graph_get_edge(graph, id))
@@ -132,8 +149,10 @@ hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, co
     node2 = hw_graph_get_node(graph, nodeId2);
     if (!node1 || !node2)
         return HW_GRAPH_ERR_NOT_FOUND;
-    if (!hw_node_get_port(node1, portId1) || !hw_node_get_port(node2, portId2))
+    if (!(port1 = hw_node_get_port(node1, portId1)) || !(port2 = hw_node_get_port(node2, portId2)))
         return HW_GRAPH_ERR_NOT_FOUND;
+    if (port1->edge || port2->edge)
+        return HW_GRAPH_ERR_PORT_ALREADY_ASSIGNED;
 
     newEdge = calloc(1, sizeof(hw_edge_t));
     if (!newEdge)
@@ -145,6 +164,10 @@ hw_graph_error hw_graph_create_edge(hw_graph_t *graph, const unsigned int id, co
     newEdge->nodes[1] = node2;
     newEdge->ports[0] = portId1;
     newEdge->ports[1] = portId2;
+
+    /*Register at port!!!*/
+    port1->edge = newEdge;
+    port2->edge = newEdge;
 
     priority_list_insert(graph->edges, newEdge, 0, &it);
 
@@ -203,7 +226,8 @@ hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_node_t *node)
 
     /*Resolve edge pointers in ports of node*/
     for (i = 0; i < newNode->numPorts; ++i)
-        newNode->ports[i].edge = hw_graph_get_edge(graph, node->ports[i].edge->id);
+        if (node->ports[i].edge)
+            newNode->ports[i].edge = hw_graph_get_edge(graph, node->ports[i].edge->id);
     priority_list_insert(graph->nodes, newNode, 0, &it);
 
     return err;
@@ -249,7 +273,8 @@ hw_graph_error hw_graph_clone_subgraph_node(hw_graph_t *graph, const hw_node_sub
     newNode->subgraph = newSubgraph;
     /*Resolve edge pointers in ports of node*/
     for (i = 0; i < newNode->base.numPorts; ++i)
-        newNode->base.ports[i].edge = hw_graph_get_edge(graph, node->base.ports[i].edge->id);
+        if (node->base.ports[i].edge)
+            newNode->base.ports[i].edge = hw_graph_get_edge(graph, node->base.ports[i].edge->id);
     priority_list_insert(graph->nodes, newNode, 0, &it);
 
     return err;
@@ -259,10 +284,20 @@ hw_graph_error hw_graph_clone_edge(hw_graph_t *graph, const hw_edge_t *edge)
 {
     hw_graph_error err = HW_GRAPH_ERR_NONE;
     hw_edge_t *newEdge;
+    hw_node_t *node1, *node2;
+    hw_port_t *port1, *port2;
     priority_list_iterator_t it;
 
     if (hw_graph_get_edge(graph, edge->id))
         return HW_GRAPH_ERR_DUPLICATE_EDGE;
+    if (!edge->nodes[0] || !edge->nodes[1])
+        return HW_GRAPH_ERR_UNKNOWN;
+    if (!(node1 = hw_graph_get_node(graph, edge->nodes[0]->id)) || !(node2 = hw_graph_get_node(graph, edge->nodes[1]->id)))
+        return HW_GRAPH_ERR_NOT_FOUND;
+    if (!(port1 = hw_node_get_port(node1, edge->ports[0])) || !(port2 = hw_node_get_port(node2, edge->ports[1])))
+        return HW_GRAPH_ERR_NOT_FOUND;
+    if (port1->edge || port2->edge)
+        return HW_GRAPH_ERR_PORT_ALREADY_ASSIGNED;
 
     newEdge = calloc(1, sizeof(hw_edge_t));
     if (!newEdge)
@@ -270,8 +305,13 @@ hw_graph_error hw_graph_clone_edge(hw_graph_t *graph, const hw_edge_t *edge)
     memcpy(newEdge, edge, sizeof(hw_edge_t));
 
     /*Resolve pointers to nodes*/
-    newEdge->nodes[0] = hw_graph_get_node(graph, edge->nodes[0]->id);
-    newEdge->nodes[1] = hw_graph_get_node(graph, edge->nodes[1]->id);
+    newEdge->nodes[0] = node1;
+    newEdge->nodes[1] = node2;
+
+    /*Resolve pointers of ports to edge*/
+    port1->edge = newEdge;
+    port2->edge = newEdge;
+
     priority_list_insert(graph->edges, newEdge, 0, &it);
 
     return err;

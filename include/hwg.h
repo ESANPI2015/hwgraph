@@ -5,7 +5,6 @@
 
 #define HWG_MAX_STRING_LENGTH 256
 #define HWG_MAX_PORTS 256
-#define HWG_MAX_OBJECTS 256
 
 typedef enum {
     HW_NODE_TYPE_NOT_SPEC = 0,
@@ -15,14 +14,6 @@ typedef enum {
     HW_NODE_TYPES
 } hw_node_type_t;
 
-const char *hw_node_type_str[HW_NODE_TYPES] =
-{
-    "UNSPEC",
-    "CONVENTIONAL",
-    "FPGA",
-    "SUBGRAPH"
-};
-
 typedef enum {
     HW_PORT_TYPE_NOT_SPEC = 0,
     HW_PORT_TYPE_SOURCE,
@@ -31,13 +22,8 @@ typedef enum {
     HW_PORT_TYPES
 } hw_port_type_t;
 
-const char *hw_port_type_str[HW_PORT_TYPES] =
-{
-    "UNSPEC",
-    "SOURCE",
-    "SINK",
-    "NDLCOM"
-};
+extern const char *hw_node_type_str[HW_NODE_TYPES];
+extern const char *hw_port_type_str[HW_PORT_TYPES];
 
 struct hw_edge_t;
 
@@ -85,6 +71,7 @@ typedef enum {
     HW_GRAPH_ERR_NOT_FOUND,
     HW_GRAPH_ERR_NOT_INITIALIZED,
     HW_GRAPH_ERR_WRONG_TYPE,
+    HW_GRAPH_ERR_PORT_ALREADY_ASSIGNED,
     HW_GRAPH_ERR_UNKNOWN
 } hw_graph_error;
 
