@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(hwGraphs)
+project(hwGraph)
 
 include_directories(src)
 include_directories(include)
@@ -37,9 +37,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Mo
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # at first we have a minimal cmdline app, which exports simply everything into plaintext files
-add_library(hwg STATIC ${SOURCES})
-target_link_libraries(hwg
+add_library(hwGraph STATIC ${SOURCES})
+target_link_libraries(hwGraph
     ${hwGraphs_PKGCONFIG_STATIC_LIBRARIES}
     )
 
 # creating a convenience target, so a user can easily execute ileggui, without cd'ing into the builddir
+
+# pkg-config, to be installed:
+configure_file(${PROJECT_NAME}.pc.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
+# pkg-config for use inside our buildtree
+configure_file(${PROJECT_NAME}-uninstalled.pc.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-uninstalled.pc @ONLY)
