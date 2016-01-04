@@ -200,10 +200,20 @@ void priority_list_insert(priority_list_t *list, void *obj, const int priority, 
         prev->next = new;
         next->prev = new;
     } else {
-        /*Insert at back*/
-        new->prev = prev;
-        new->next = NULL;
-        list->last = new;
+        if (prev)
+        {
+            /*Insert at back*/
+            new->prev = prev;
+            new->next = NULL;
+            prev->next = new;
+            list->last = new;
+        } else {
+            /*Insert in empty list*/
+            new->prev = NULL;
+            new->next = NULL;
+            list->last = new;
+            list->first = new;
+        }
     }
 
     /*Update iterator*/
