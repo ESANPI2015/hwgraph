@@ -227,7 +227,10 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
   } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
 
   if (err != HWG_PARSE_ERR_NONE)
+  {
+      fprintf(stderr, "HWG_PARSE_NODE: Parser error\n");
       return err;
+  }
   yaml_event_delete(&event);
 
   if (!gotId)
@@ -245,7 +248,6 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
       fprintf(stderr, "HWG_PARSE_NODE: No port found\n");
       return HWG_PARSE_ERR_MISSING_PORTS;
   }
-
 
   if (node.type == HW_NODE_TYPE_SUBGRAPH)
   {
@@ -350,51 +352,54 @@ static hwg_parse_error parse_node_ports(yaml_parser_t *parser,
 
   err = get_event(parser, &event, YAML_SEQUENCE_START_EVENT);
   yaml_event_delete(&event);
+  err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
   do {
+      gotId = false;
       gotType = false;
       gotName = false;
-      err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
-      yaml_event_delete(&event);
-      err = get_event(parser, &event, YAML_SCALAR_EVENT);
-      do {
-          if (strcmp((const char*)event.data.scalar.value, "id") == 0)
-          {
-              if (gotId)
+      if (event.type == YAML_MAPPING_START_EVENT)
+      {
+          err = get_event(parser, &event, YAML_SCALAR_EVENT);
+          do {
+              if (strcmp((const char*)event.data.scalar.value, "id") == 0)
               {
-                  fprintf(stderr, "HWG_PARSE_NODE_PORTS: Multiple \"id\" sections.\n");
+                  if (gotId)
+                  {
+                      fprintf(stderr, "HWG_PARSE_NODE_PORTS: Multiple \"id\" sections.\n");
+                  }
+                  err = get_int(parser, &ports[cnt].id);
+                  gotId = true;
               }
-              err = get_int(parser, &ports[cnt].id);
-              gotId = true;
-          }
-          else if (strcmp((const char*)event.data.scalar.value, "name") == 0)
-          {
-              if (gotName)
+              else if (strcmp((const char*)event.data.scalar.value, "name") == 0)
               {
-                  fprintf(stderr, "HWG_PARSE_NODE_PORTS: Multiple \"name\" sections.\n");
+                  if (gotName)
+                  {
+                      fprintf(stderr, "HWG_PARSE_NODE_PORTS: Multiple \"name\" sections.\n");
+                  }
+                  err = get_string(parser, ports[cnt].name);
+                  gotName = true;
               }
-              err = get_string(parser, ports[cnt].name);
-              gotName = true;
-          }
-          else if (strcmp((const char*)event.data.scalar.value, "type") == 0)
-          {
-              if (gotType)
+              else if (strcmp((const char*)event.data.scalar.value, "type") == 0)
               {
-                  fprintf(stderr, "HWG_PARSE_NODE_PORTS: Multiple \"type\" sections.\n");
+                  if (gotType)
+                  {
+                      fprintf(stderr, "HWG_PARSE_NODE_PORTS: Multiple \"type\" sections.\n");
+                  }
+                  err = parse_port_type(parser, &ports[cnt].type);
+                  gotType = true;
+              } else {
+                skip_next_node(parser, &event);
               }
-              err = parse_port_type(parser, &ports[cnt].type);
-              gotType = true;
-          } else {
-            skip_next_node(parser, &event);
-          }
-          yaml_event_delete(&event);
-          if (!yaml_parser_parse(parser, &event))
-              err = HWG_PARSE_ERR_UNKNOWN;
-      } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
-      if (!gotId)
-          err = HWG_PARSE_ERR_MISSING_ID;
-      if (!gotType)
-          err = HWG_PARSE_ERR_MISSING_TYPE;
-      ++cnt;
+              yaml_event_delete(&event);
+              if (!yaml_parser_parse(parser, &event))
+                  err = HWG_PARSE_ERR_UNKNOWN;
+          } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
+          if (!gotId)
+              err = HWG_PARSE_ERR_MISSING_ID;
+          if (!gotType)
+              err = HWG_PARSE_ERR_MISSING_TYPE;
+          ++cnt;
+      }
       yaml_event_delete(&event);
       if (!yaml_parser_parse(parser, &event))
           err = HWG_PARSE_ERR_UNKNOWN;
@@ -414,6 +419,7 @@ static hwg_parse_error parse_node_ports(yaml_parser_t *parser,
 static hwg_parse_error parse_edges(yaml_parser_t *parser, hw_graph_t *g)
 {
   hwg_parse_error err = HWG_PARSE_ERR_NONE;
+  hw_graph_error gerr;
   yaml_event_t event;
   bool gotId = false;
   bool gotName = false;
@@ -425,79 +431,90 @@ static hwg_parse_error parse_edges(yaml_parser_t *parser, hw_graph_t *g)
   /*fprintf(stderr, "parse edges...");*/
   err = get_event(parser, &event, YAML_SEQUENCE_START_EVENT);
   yaml_event_delete(&event);
+  err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
   do {
       gotId = false;
       gotName = false;
       gotNodes = 0;
       gotPorts = 0;
-      err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
-      yaml_event_delete(&event);
-      err = get_event(parser, &event, YAML_SCALAR_EVENT);
-      do {
-          /*Parse edge contents*/
-          if(strcmp((const char*)event.data.scalar.value, "node") == 0)
-          {
-              if (gotNodes >= 2)
-              {
-                  fprintf(stderr, "HWG_PARSE_EDGES: Only two nodes can be specified by an edge yet.\n");
-                  return HWG_PARSE_ERR_TOO_MANY_NODES;
-              }
-              err = get_int(parser, &nodeId);
-              /*NOTE: We store the id in a ptr. This is a little bit ugly, but will be converted soon ...*/
-              edge.nodes[gotNodes] = hw_graph_get_node(g, nodeId);
-              gotNodes++;
-          }
-          else if(strcmp((const char*)event.data.scalar.value, "port") == 0)
-          {
-              if (gotPorts >= 2)
-              {
-                  fprintf(stderr, "HWG_PARSE_EDGES: Only two nodes can be specified by an edge yet.\n");
-                  return HWG_PARSE_ERR_TOO_MANY_NODES;
-              }
-              err = get_int(parser, &edge.ports[gotPorts]);
-              gotPorts++;
-          }
-          else if(strcmp((const char*)event.data.scalar.value, "id") == 0)
-          {
-              if (gotId)
-              {
-                  fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"id\" sections.\n");
-              }
-              err = get_int(parser, &edge.id);
-              gotId = true;
-          }
-          else if(strcmp((const char*)event.data.scalar.value, "name") == 0)
-          {
-              if (gotName)
-              {
-                  fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"name\" sections.\n");
-              }
-              err = get_string(parser, edge.name);
-              gotName = true;
-          }
-          else
-          {
-              skip_next_node(parser, &event);
-          }
-
-          /*Get next event*/
-          yaml_event_delete(&event);
-          if (!yaml_parser_parse(parser, &event))
-              err = HWG_PARSE_ERR_UNKNOWN;
-      } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
-
-      /*Got new valid edge: Set entries and push to list*/
-      if ((gotNodes == 2) && (gotPorts == 2) && gotId)
+      if (event.type == YAML_MAPPING_START_EVENT)
       {
-          err = hw_graph_clone_edge(g, &edge);
-      } else {
-          err = HWG_PARSE_ERR_MISSING_ID;
+          err = get_event(parser, &event, YAML_SCALAR_EVENT);
+          do {
+              /*Parse edge contents*/
+              if(strcmp((const char*)event.data.scalar.value, "node") == 0)
+              {
+                  if (gotNodes >= 2)
+                  {
+                      fprintf(stderr, "HWG_PARSE_EDGES: Only two nodes can be specified by an edge yet.\n");
+                      return HWG_PARSE_ERR_TOO_MANY_NODES;
+                  }
+                  err = get_int(parser, &nodeId);
+                  /*NOTE: We store the id in a ptr. This is a little bit ugly, but will be converted soon ...*/
+                  edge.nodes[gotNodes] = hw_graph_get_node(g, nodeId);
+                  gotNodes++;
+              }
+              else if(strcmp((const char*)event.data.scalar.value, "port") == 0)
+              {
+                  if (gotPorts >= 2)
+                  {
+                      fprintf(stderr, "HWG_PARSE_EDGES: Only two nodes can be specified by an edge yet.\n");
+                      return HWG_PARSE_ERR_TOO_MANY_NODES;
+                  }
+                  err = get_int(parser, &edge.ports[gotPorts]);
+                  gotPorts++;
+              }
+              else if(strcmp((const char*)event.data.scalar.value, "id") == 0)
+              {
+                  if (gotId)
+                  {
+                      fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"id\" sections.\n");
+                  }
+                  err = get_int(parser, &edge.id);
+                  gotId = true;
+              }
+              else if(strcmp((const char*)event.data.scalar.value, "name") == 0)
+              {
+                  if (gotName)
+                  {
+                      fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"name\" sections.\n");
+                  }
+                  err = get_string(parser, edge.name);
+                  gotName = true;
+              }
+              else
+              {
+                  skip_next_node(parser, &event);
+              }
+
+              /*Get next event*/
+              yaml_event_delete(&event);
+              if (!yaml_parser_parse(parser, &event))
+                  err = HWG_PARSE_ERR_UNKNOWN;
+          } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
+
+          /*Got new valid edge: Set entries and push to list*/
+          if ((gotNodes == 2) && (gotPorts == 2) && gotId)
+          {
+              gerr = hw_graph_clone_edge(g, &edge);
+              if (gerr != HW_GRAPH_ERR_NONE)
+              {
+                  fprintf(stderr, "HWG_PARSE_EDGES: Clone failed (%u)\n", (unsigned int)gerr);
+                  err = HWG_PARSE_ERR_UNKNOWN;
+              }
+          } else {
+              fprintf(stderr, "HWG_PARSE_EDGES: Wrong edge\n");
+              err = HWG_PARSE_ERR_MISSING_ID;
+          }
       }
 
       /*Get next event*/
       yaml_event_delete(&event);
       if (!yaml_parser_parse(parser, &event))
+      {
+          fprintf(stderr, "Parser error\n");
           err = HWG_PARSE_ERR_UNKNOWN;
+      }
   } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_SEQUENCE_END_EVENT);
 
   if (err != HWG_PARSE_ERR_NONE)
@@ -619,15 +636,15 @@ hwg_parse_error hw_graph_from_yaml_file(const char *filename, hw_graph_t *g)
     hwg_parse_error err = HWG_PARSE_ERR_NONE;
   yaml_parser_t parser;
   FILE *fp = NULL;
-  char full_path[HWG_MAX_STRING_LENGTH];
+  /*char full_path[HWG_MAX_STRING_LENGTH];*/
 
-  getcwd(full_path, HWG_MAX_STRING_LENGTH);
-  strncat(full_path, filename, HWG_MAX_STRING_LENGTH);
+  /*getcwd(full_path, HWG_MAX_STRING_LENGTH);*/
+  /*strncat(full_path, filename, HWG_MAX_STRING_LENGTH);*/
 
   yaml_parser_initialize(&parser);
-  fp = fopen(full_path, "r");
+  fp = fopen(filename, "r");
   if(!fp) {
-    fprintf(stderr, "ERROR: could not open file \"%s\".\n", full_path);
+    fprintf(stderr, "HW_GRAPH_FROM_YAML_FILE: Could not open file \"%s\".\n", filename);
     return HWG_PARSE_ERR_IO;
   }
   yaml_parser_set_input_file(&parser, fp);
