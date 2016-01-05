@@ -180,8 +180,14 @@ void priority_list_insert(priority_list_t *list, void *obj, const int priority, 
         prev = it->item->prev;
         next = it->item->next;
         /*Remove at old position*/
-        prev->next = it->item->next;
-        next->prev = it->item->prev;
+        if (prev)
+            prev->next = it->item->next;
+        else
+            list->first = it->item->next;
+        if (next)
+            next->prev = it->item->prev;
+        else
+            list->last = it->item->prev;
     } else {
         /*Object doesnt exit: Create and insert*/
         new = (priority_list_item_t *)calloc(1, sizeof(priority_list_item_t));
