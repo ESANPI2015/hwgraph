@@ -158,6 +158,10 @@ bool priority_list_find(priority_list_t *list, const void *obj, priority_list_it
   return current != NULL;
 }
 
+int priority_list_get_priority(priority_list_iterator_t *it)
+{
+    return it->item->priority;
+}
 /*INSERT:
  * * Try to find obj
  * * If it exists, update priority and re-sort

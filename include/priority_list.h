@@ -23,6 +23,7 @@ void* priority_list_prev(priority_list_iterator_t *it);
 void* priority_list_get(priority_list_iterator_t *it);
 size_t priority_list_size(priority_list_t *list);
 bool priority_list_find(priority_list_t *list, const void *obj, priority_list_iterator_t *it);
+int priority_list_get_priority(priority_list_iterator_t *it);
 
 /*INSERT:
  * * Try to find obj
