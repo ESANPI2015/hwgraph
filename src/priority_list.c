@@ -56,7 +56,8 @@ void priority_list_copy(priority_list_t *dest, const priority_list_t *src)
       new->priority = current->priority;
       new->prev = prev;
       new->next = NULL;
-      prev->next = new;
+      if (prev)
+          prev->next = new;
 
       current = current->next;
       prev = new;
@@ -197,7 +198,10 @@ void priority_list_insert(priority_list_t *list, void *obj, const int priority, 
         /*Insert*/
         new->prev = prev;
         new->next = next;
-        prev->next = new;
+        if (prev)
+            prev->next = new;
+        else
+            list->first = new;
         next->prev = new;
     } else {
         if (prev)
