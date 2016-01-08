@@ -560,73 +560,59 @@ hwg_parse_error hw_graph_from_parser(yaml_parser_t *parser, hw_graph_t *g)
   bool gotName = false;
   bool gotSubgraphName = false;
 
-  if(!yaml_parser_parse(parser, &event)) {
-    fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error.\n");
-    return HWG_PARSE_ERR_UNKNOWN;
+  if ((err = get_event(parser, &event, YAML_MAPPING_START_EVENT)) != HWG_PARSE_ERR_NONE) {
+      fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding MAPPING_START.\n");
+      return err;
   }
-  if(event.type == YAML_STREAM_START_EVENT) {
-    yaml_event_delete(&event);
-    if(!yaml_parser_parse(parser, &event)) {
-        fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error after STREAM_START.\n");
-        return HWG_PARSE_ERR_UNKNOWN;
-    }
-    if(event.type == YAML_DOCUMENT_START_EVENT) {
-      yaml_event_delete(&event);
-      if ((err = get_event(parser, &event, YAML_MAPPING_START_EVENT)) != HWG_PARSE_ERR_NONE) {
-          fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding MAPPING_START.\n");
-          return err;
-      }
-      yaml_event_delete(&event);
-      if ((err = get_event(parser, &event, YAML_SCALAR_EVENT)) != HWG_PARSE_ERR_NONE) {
-          fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding SCALAR.\n");
-          return err;
-      }
-      do {
-          /*Handle event*/
-          if (event.type == YAML_SCALAR_EVENT)
-          {
-                if(strcmp("nodes", (const char*)event.data.scalar.value) == 0) {
-                    err = parse_nodes(parser, g);
-                } else if(strcmp("edges",(const char*)event.data.scalar.value)==0) {
-                    /* TODO: Postpone edge parsing. Move to a second pass of the parsing process*/
-                    err = parse_edges(parser, g);
-                }
-                else if(strcmp((const char*)event.data.scalar.value, "id") == 0)
-                {
-                    if (gotId)
-                    {
-                        fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"id\" sections.\n");
-                    }
-                    err = get_int(parser, &g->id);
-                    gotId = true;
-                }
-                else if(strcmp((const char*)event.data.scalar.value, "name") == 0)
-                {
-                    if (gotName)
-                    {
-                        fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"name\" sections.\n");
-                    }
-                    err = get_string(parser, g->name);
-                    gotName = true;
-                } 
-                else if(strcmp((const char*)event.data.scalar.value, "subName") == 0)
-                {
-                    if(gotSubgraphName) {
-                        fprintf(stderr, "HW_GRAPH_FROM_PARSER: Multiple \"subName\" sections.\n");
-                    }
-                    err = get_string(parser, g->subName);
-                    gotSubgraphName = true;
-                } else {
-                    fprintf(stderr, "HW_GRAPH_FROM_PARSER: Scalar event %s unexpected\n", event.data.scalar.value);
-                }
-          }
-          /*Get next event*/
-          yaml_event_delete(&event);
-          if (!yaml_parser_parse(parser, &event))
-              err = HWG_PARSE_ERR_UNKNOWN;
-      } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
-    }
+  yaml_event_delete(&event);
+  if ((err = get_event(parser, &event, YAML_SCALAR_EVENT)) != HWG_PARSE_ERR_NONE) {
+      fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding SCALAR.\n");
+      return err;
   }
+  do {
+      /*Handle event*/
+      if (event.type == YAML_SCALAR_EVENT)
+      {
+            if(strcmp("nodes", (const char*)event.data.scalar.value) == 0) {
+                err = parse_nodes(parser, g);
+            } else if(strcmp("edges",(const char*)event.data.scalar.value)==0) {
+                /* TODO: Postpone edge parsing. Move to a second pass of the parsing process*/
+                err = parse_edges(parser, g);
+            }
+            else if(strcmp((const char*)event.data.scalar.value, "id") == 0)
+            {
+                if (gotId)
+                {
+                    fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"id\" sections.\n");
+                }
+                err = get_int(parser, &g->id);
+                gotId = true;
+            }
+            else if(strcmp((const char*)event.data.scalar.value, "name") == 0)
+            {
+                if (gotName)
+                {
+                    fprintf(stderr, "HWG_PARSE_EDGES: Multiple \"name\" sections.\n");
+                }
+                err = get_string(parser, g->name);
+                gotName = true;
+            } 
+            else if(strcmp((const char*)event.data.scalar.value, "subName") == 0)
+            {
+                if(gotSubgraphName) {
+                    fprintf(stderr, "HW_GRAPH_FROM_PARSER: Multiple \"subName\" sections.\n");
+                }
+                err = get_string(parser, g->subName);
+                gotSubgraphName = true;
+            } else {
+                fprintf(stderr, "HW_GRAPH_FROM_PARSER: Scalar event %s unexpected\n", event.data.scalar.value);
+            }
+      }
+      /*Get next event*/
+      yaml_event_delete(&event);
+      if (!yaml_parser_parse(parser, &event))
+          err = HWG_PARSE_ERR_UNKNOWN;
+  } while (err == HWG_PARSE_ERR_NONE && event.type != YAML_MAPPING_END_EVENT);
 
   return err;
 }
@@ -634,6 +620,7 @@ hwg_parse_error hw_graph_from_parser(yaml_parser_t *parser, hw_graph_t *g)
 hwg_parse_error hw_graph_from_yaml_file(const char *filename, hw_graph_t *g)
 {
     hwg_parse_error err = HWG_PARSE_ERR_NONE;
+  yaml_event_t event;
   yaml_parser_t parser;
   FILE *fp = NULL;
   /*char full_path[HWG_MAX_STRING_LENGTH];*/
@@ -649,7 +636,22 @@ hwg_parse_error hw_graph_from_yaml_file(const char *filename, hw_graph_t *g)
   }
   yaml_parser_set_input_file(&parser, fp);
 
-  err = hw_graph_from_parser(&parser,g);
+  /*Here we first handle events of the file itself: We can use hw_graph_from_parser() now also for nested hw graphs*/
+  if(!yaml_parser_parse(&parser, &event)) {
+    fprintf(stderr, "HW_GRAPH_FROM_YAML_FILE: YAML parser encountered an error.\n");
+    return HWG_PARSE_ERR_UNKNOWN;
+  }
+  if(event.type == YAML_STREAM_START_EVENT) {
+    yaml_event_delete(&event);
+    if(!yaml_parser_parse(&parser, &event)) {
+        fprintf(stderr, "HW_GRAPH_FROM_YAML_FILE: YAML parser encountered an error after STREAM_START.\n");
+        return HWG_PARSE_ERR_UNKNOWN;
+    }
+    if(event.type == YAML_DOCUMENT_START_EVENT) {
+      yaml_event_delete(&event);
+      err = hw_graph_from_parser(&parser,g);
+    }
+  }
 
   yaml_parser_delete(&parser);
   fclose(fp);

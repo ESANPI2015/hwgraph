@@ -119,6 +119,7 @@ static int emit_edge_list(yaml_emitter_t *emitter, priority_list_t *edge_list) {
 
 hwg_parse_error hw_graph_to_yaml_file(const char *filename, const hw_graph_t *g) {
   yaml_emitter_t emitter;
+  yaml_event_t event;
   int ok = 1;
   FILE *fp;
   hwg_parse_error err;
@@ -130,28 +131,60 @@ hwg_parse_error hw_graph_to_yaml_file(const char *filename, const hw_graph_t *g)
   ok &= yaml_emitter_initialize(&emitter);
   yaml_emitter_set_output_file(&emitter, fp);
 
+  ok &= yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
+  ok &= yaml_emitter_emit(&emitter, &event);
+  ok &= yaml_document_start_event_initialize(&event, NULL, NULL, 0, 1);
+  ok &= yaml_emitter_emit(&emitter, &event);
+
   err = hw_graph_to_emitter(&emitter, g);
+
+  ok &= yaml_document_end_event_initialize(&event, 1);
+  ok &= yaml_emitter_emit(&emitter, &event);
+  ok &= yaml_stream_end_event_initialize(&event);
+  ok &= yaml_emitter_emit(&emitter, &event);
+  if(!ok) {
+    fprintf(stderr, "YAML Error: %s\n", emitter.problem);
+    err = HWG_PARSE_ERR_UNKNOWN;
+  }
+
+  yaml_emitter_delete(&emitter);
   fclose(fp);
   return err;
 }
 
 hwg_parse_error hw_graph_to_yaml_string(unsigned char *buffer, size_t buffer_size,
                                  const hw_graph_t *g, size_t *bytes_written) {
+  hwg_parse_error err;
   yaml_emitter_t emitter;
+  yaml_event_t event;
   int ok = 1;
   ok &= yaml_emitter_initialize(&emitter);
   yaml_emitter_set_output_string(&emitter, buffer, buffer_size, bytes_written);
-  return hw_graph_to_emitter(&emitter, g);
+
+  ok &= yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
+  ok &= yaml_emitter_emit(&emitter, &event);
+  ok &= yaml_document_start_event_initialize(&event, NULL, NULL, 0, 1);
+  ok &= yaml_emitter_emit(&emitter, &event);
+
+  err = hw_graph_to_emitter(&emitter, g);
+
+  ok &= yaml_document_end_event_initialize(&event, 1);
+  ok &= yaml_emitter_emit(&emitter, &event);
+  ok &= yaml_stream_end_event_initialize(&event);
+  ok &= yaml_emitter_emit(&emitter, &event);
+  if(!ok) {
+    fprintf(stderr, "YAML Error: %s\n", emitter.problem);
+    err = HWG_PARSE_ERR_UNKNOWN;
+  }
+
+  yaml_emitter_delete(&emitter);
+  return err;
 }
 
 hwg_parse_error hw_graph_to_emitter(yaml_emitter_t *emitter, const hw_graph_t *g) {
     hwg_parse_error err = HWG_PARSE_ERR_NONE;
   yaml_event_t event;
   int ok = 1;
-  ok &= yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
-  ok &= yaml_emitter_emit(emitter, &event);
-  ok &= yaml_document_start_event_initialize(&event, NULL, NULL, 0, 1);
-  ok &= yaml_emitter_emit(emitter, &event);
   ok &= yaml_mapping_start_event_initialize(&event, NULL, NULL, 0,
                                             YAML_BLOCK_MAPPING_STYLE);
   ok &= yaml_emitter_emit(emitter, &event);
@@ -181,14 +214,5 @@ hwg_parse_error hw_graph_to_emitter(yaml_emitter_t *emitter, const hw_graph_t *g
   /* finalize */
   ok &= yaml_mapping_end_event_initialize(&event);
   ok &= yaml_emitter_emit(emitter, &event);
-  ok &= yaml_document_end_event_initialize(&event, 1);
-  ok &= yaml_emitter_emit(emitter, &event);
-  ok &= yaml_stream_end_event_initialize(&event);
-  ok &= yaml_emitter_emit(emitter, &event);
-  if(!ok) {
-    fprintf(stderr, "YAML Error: %s\n", emitter->problem);
-    err = HWG_PARSE_ERR_UNKNOWN;
-  }
-  yaml_emitter_delete(emitter);
   return err;
 }
