@@ -428,7 +428,6 @@ static hwg_parse_error parse_edges(yaml_parser_t *parser, hw_graph_t *g)
   unsigned int nodeId;
   hw_edge_t edge;
 
-  /*fprintf(stderr, "parse edges...");*/
   err = get_event(parser, &event, YAML_SEQUENCE_START_EVENT);
   yaml_event_delete(&event);
   err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
