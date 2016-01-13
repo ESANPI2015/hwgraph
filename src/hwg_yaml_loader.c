@@ -253,7 +253,7 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
   {
       /*Special handling for SUBGRAPH nodes!*/
       memcpy(&subNode.base, &node, sizeof(hw_node_t));
-      gerr = hw_graph_init(&subgraph, node.id, node.name, g->subName);
+      gerr = hw_graph_init(&subgraph, node.id, node.name);
       if (gerr != HW_GRAPH_ERR_NONE)
       {
           fprintf(stderr, "HWG_PARSE_NODE: Graph init failed (%u)\n", (unsigned int)gerr);
@@ -557,7 +557,6 @@ hwg_parse_error hw_graph_from_parser(yaml_parser_t *parser, hw_graph_t *g)
   yaml_event_t event;
   bool gotId = false;
   bool gotName = false;
-  bool gotSubgraphName = false;
 
   if ((err = get_event(parser, &event, YAML_MAPPING_START_EVENT)) != HWG_PARSE_ERR_NONE) {
       fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding MAPPING_START.\n");
@@ -595,14 +594,6 @@ hwg_parse_error hw_graph_from_parser(yaml_parser_t *parser, hw_graph_t *g)
                 }
                 err = get_string(parser, g->name);
                 gotName = true;
-            } 
-            else if(strcmp((const char*)event.data.scalar.value, "subName") == 0)
-            {
-                if(gotSubgraphName) {
-                    fprintf(stderr, "HW_GRAPH_FROM_PARSER: Multiple \"subName\" sections.\n");
-                }
-                err = get_string(parser, g->subName);
-                gotSubgraphName = true;
             } else {
                 fprintf(stderr, "HW_GRAPH_FROM_PARSER: Scalar event %s unexpected\n", event.data.scalar.value);
             }

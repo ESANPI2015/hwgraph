@@ -256,7 +256,7 @@ hw_graph_error hw_graph_clone_subgraph_node(hw_graph_t *graph, const hw_node_sub
         free(newNode);
         return HW_GRAPH_ERR_NOMEM;
     }
-    err = hw_graph_init(newSubgraph, node->base.id, node->base.name, graph->subName);
+    err = hw_graph_init(newSubgraph, node->base.id, node->base.name);
     if (err != HW_GRAPH_ERR_NONE) {
         free(newNode);
         hw_graph_destroy(newSubgraph);
@@ -317,11 +317,11 @@ hw_graph_error hw_graph_clone_edge(hw_graph_t *graph, const hw_edge_t *edge)
     return err;
 }
 
-hw_graph_error hw_graph_init(hw_graph_t *graph, const unsigned int id, const char *name, const char *subName)
+hw_graph_error hw_graph_init(hw_graph_t *graph, const unsigned int id, const char *name)
 {
     graph->id = id;
-    strncpy(graph->name, name, HWG_MAX_STRING_LENGTH);
-    strncpy(graph->subName, subName, HWG_MAX_STRING_LENGTH);
+    if (name)
+        strncpy(graph->name, name, HWG_MAX_STRING_LENGTH);
 
     priority_list_init(&graph->nodes);
     if (!graph->nodes)

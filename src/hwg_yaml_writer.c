@@ -193,8 +193,6 @@ hwg_parse_error hw_graph_to_emitter(yaml_emitter_t *emitter, const hw_graph_t *g
   ok &= emit_ulong(emitter, g->id);
   ok &= emit_str(emitter, "name");
   ok &= emit_str(emitter, g->name);
-  ok &= emit_str(emitter, "subName");
-  ok &= emit_str(emitter, g->subName);
   /* emit nodes */
   ok &= emit_str(emitter, "nodes");
   ok &= yaml_sequence_start_event_initialize(&event, NULL, NULL, 0,

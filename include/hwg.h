@@ -55,7 +55,6 @@ typedef struct hw_edge_t {
 typedef struct {
     unsigned int id;
     char name[HWG_MAX_STRING_LENGTH];
-    char subName[HWG_MAX_STRING_LENGTH];
 
     priority_list_t *nodes;
     priority_list_t *edges;
@@ -95,7 +94,7 @@ hw_graph_error hw_graph_clone_node(hw_graph_t *graph, const hw_node_t *node);
 hw_graph_error hw_graph_clone_subgraph_node(hw_graph_t *graph, const hw_node_subgraph_t *node);
 hw_graph_error hw_graph_clone_edge(hw_graph_t *graph, const hw_edge_t *edge);
 
-hw_graph_error hw_graph_init(hw_graph_t *graph, const unsigned int id, const char *name, const char *subName);
+hw_graph_error hw_graph_init(hw_graph_t *graph, const unsigned int id, const char *name);
 void hw_graph_destroy(hw_graph_t *graph);
 
 #endif
