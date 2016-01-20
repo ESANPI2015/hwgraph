@@ -79,75 +79,6 @@ static hwg_parse_error get_string(yaml_parser_t *parser, char s[HWG_MAX_STRING_L
   return err;
 }
 
-static hwg_parse_error _skip_node_helper(yaml_parser_t *parser, yaml_event_t *event,
-                                  bool is_nested) {
-  hwg_parse_error err = HWG_PARSE_ERR_NONE;
-  yaml_event_type_t type;
-  yaml_event_t next_event;
-  bool done = false;
-  type = event->type;
-
-  switch(type) {
-      case YAML_SEQUENCE_START_EVENT:
-        do {
-          if(!yaml_parser_parse(parser, &next_event)) {
-            fprintf(stderr, "HWG_SKIP_NODE_HELPER: Error while parsing\n");
-            return HWG_PARSE_ERR_UNKNOWN;
-          }
-          err = _skip_node_helper(parser, &next_event, true);
-          if(next_event.type == YAML_SEQUENCE_END_EVENT) {
-            done = true;
-          }
-          yaml_event_delete(&next_event);
-        } while(!done);
-        break;
-      case YAML_MAPPING_START_EVENT:
-        do {
-          if(!yaml_parser_parse(parser, &next_event)) {
-            fprintf(stderr, "HWG_SKIP_NODE_HELPER: Error while parsing\n");
-            return HWG_PARSE_ERR_UNKNOWN;
-          }
-          err = _skip_node_helper(parser, &next_event, true);
-          if(next_event.type == YAML_MAPPING_END_EVENT) {
-            done = true;
-          }
-          yaml_event_delete(&next_event);
-        } while(!done);
-        break;
-      case YAML_SEQUENCE_END_EVENT:
-      case YAML_MAPPING_END_EVENT:
-        break;
-      case YAML_ALIAS_EVENT:
-      case YAML_SCALAR_EVENT:
-        break;
-      case YAML_NO_EVENT:
-        fprintf(stderr, "HWG_SKIP_NODE_HELPER: What is a YAML NO_EVENT? Let's skip the next node.\n");
-        return HWG_PARSE_ERR_UNKNOWN;
-      default:
-        fprintf(stderr, "HWG_SKIP_NODE_HELPER: unhandled event: %d.\n", event->type);
-        return HWG_PARSE_ERR_UNKNOWN;
-  }
-  return err;
-}
-
-static hwg_parse_error skip_node(yaml_parser_t *parser, yaml_event_t *event) {
-  return _skip_node_helper(parser, event, false);
-}
-
-static hwg_parse_error skip_next_node(yaml_parser_t *parser, yaml_event_t *event) {
-  hwg_parse_error err;
-  yaml_event_t next_event;
-
-  if(!yaml_parser_parse(parser, &next_event)) {
-    fprintf(stderr, "HWG_SKIP_NEXT_NODE: Error while parsing\n");
-    return HWG_PARSE_ERR_UNKNOWN;
-  }
-  err = skip_node(parser, &next_event);
-  yaml_event_delete(&next_event);
-
-  return err;
-}
-
 static hwg_parse_error parse_nodes(yaml_parser_t *parser, hw_graph_t *g) {
   hwg_parse_error err = HWG_PARSE_ERR_NONE;
   yaml_event_t event;
@@ -192,6 +123,12 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
   hw_node_subgraph_t subNode;
 
   err = get_event(parser, &event, YAML_SCALAR_EVENT); /*Go to first SCALAR*/
+  if (err != HWG_PARSE_ERR_NONE)
+  {
+      fprintf(stderr, "HWG_PARSE_NODE: No scalar found. Skipping\n");
+      return err;
+  }
+
   do {
         if(strcmp((const char*)event.data.scalar.value, "id") == 0) {
           if(gotId) {
@@ -218,8 +155,7 @@ static hwg_parse_error parse_node(yaml_parser_t *parser, hw_graph_t *g) {
           err = get_string(parser, node.name);
           gotName = true;
         } else {
-          skip_node(parser, &event);
-          skip_next_node(parser, &event);
+          fprintf(stderr, "HWG_PARSE_NODE: Ignoring unknown stuff.\n");
         }
         yaml_event_delete(&event);
         if (!yaml_parser_parse(parser, &event))
@@ -351,8 +287,19 @@ static hwg_parse_error parse_node_ports(yaml_parser_t *parser,
   size_t cnt = 0;
 
   err = get_event(parser, &event, YAML_SEQUENCE_START_EVENT);
+  if (err != HWG_PARSE_ERR_NONE)
+  {
+      fprintf(stderr, "HWG_PARSE_NODE_PORTS: Missing sequence. Skipping\n");
+      return err;
+  }
   yaml_event_delete(&event);
   err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
+  if (err != HWG_PARSE_ERR_NONE)
+  {
+      fprintf(stderr, "HWG_PARSE_NODE_PORTS: Missing mapping. Skipping\n");
+      return err;
+  }
+
   do {
       gotId = false;
       gotType = false;
@@ -429,8 +376,16 @@ static hwg_parse_error parse_edges(yaml_parser_t *parser, hw_graph_t *g)
   hw_edge_t edge;
 
   err = get_event(parser, &event, YAML_SEQUENCE_START_EVENT);
+  if (err != HWG_PARSE_ERR_NONE) {
+      fprintf(stderr, "HWG_PARSE_EDGES: Missing sequence. Skipping\n");
+      return err;
+  }
   yaml_event_delete(&event);
   err = get_event(parser, &event, YAML_MAPPING_START_EVENT);
+  if (err != HWG_PARSE_ERR_NONE) {
+      fprintf(stderr, "HWG_PARSE_EDGES: Missing mapping. Skipping\n");
+      return err;
+  }
   do {
       gotId = false;
       gotName = false;
@@ -559,12 +514,12 @@ hwg_parse_error hw_graph_from_parser(yaml_parser_t *parser, hw_graph_t *g)
   bool gotName = false;
 
   if ((err = get_event(parser, &event, YAML_MAPPING_START_EVENT)) != HWG_PARSE_ERR_NONE) {
-      fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding MAPPING_START.\n");
+      fprintf(stderr, "HW_GRAPH_FROM_PARSER: Missing mapping. Skipping\n");
       return err;
   }
   yaml_event_delete(&event);
   if ((err = get_event(parser, &event, YAML_SCALAR_EVENT)) != HWG_PARSE_ERR_NONE) {
-      fprintf(stderr, "HW_GRAPH_FROM_PARSER: YAML parser encountered an error finding SCALAR.\n");
+      fprintf(stderr, "HW_GRAPH_FROM_PARSER: No scalar found. Skipping\n");
       return err;
   }
   do {
@@ -597,6 +552,8 @@ hwg_parse_error hw_graph_from_parser(yaml_parser_t *parser, hw_graph_t *g)
             } else {
                 fprintf(stderr, "HW_GRAPH_FROM_PARSER: Scalar event %s unexpected\n", event.data.scalar.value);
             }
+      } else {
+        fprintf(stderr, "HW_GRAPH_FROM_PARSER: Ignoring unexpected event %s\n", event.data.scalar.value);
       }
       /*Get next event*/
       yaml_event_delete(&event);
