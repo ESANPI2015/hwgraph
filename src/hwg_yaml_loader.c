@@ -335,7 +335,7 @@ static hwg_parse_error parse_node_ports(yaml_parser_t *parser,
                   err = parse_port_type(parser, &ports[cnt].type);
                   gotType = true;
               } else {
-                skip_next_node(parser, &event);
+                  fprintf(stderr, "HWG_PARSE_NODE_PORTS: Ignoring unknown stuff.\n");
               }
               yaml_event_delete(&event);
               if (!yaml_parser_parse(parser, &event))
@@ -438,7 +438,7 @@ static hwg_parse_error parse_edges(yaml_parser_t *parser, hw_graph_t *g)
               }
               else
               {
-                  skip_next_node(parser, &event);
+                  fprintf(stderr, "HWG_PARSE_EDGES: Ignoring unknown stuff.\n");
               }
 
               /*Get next event*/
