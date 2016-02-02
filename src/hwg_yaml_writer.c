@@ -101,13 +101,25 @@ static int emit_edge_list(yaml_emitter_t *emitter, priority_list_t *edge_list) {
           ok &= emit_ulong(emitter, current_edge->id);
           ok &= emit_str(emitter, "name");
           ok &= emit_str(emitter, current_edge->name);
+
+          ok &= emit_str(emitter, "nodes");
+          ok &= yaml_sequence_start_event_initialize(&event, NULL, NULL, 0,
+                                                     YAML_BLOCK_SEQUENCE_STYLE);
+          ok &= yaml_emitter_emit(emitter, &event);
           for (i = 0; i < 2; ++i)
           {
-              ok &= emit_str(emitter, "node");
+              ok &= yaml_mapping_start_event_initialize(&event, NULL, NULL, 0,
+                                                        YAML_FLOW_MAPPING_STYLE);
+              ok &= yaml_emitter_emit(emitter, &event);
+              ok &= emit_str(emitter, "id");
               ok &= emit_ulong(emitter, current_edge->nodes[i]->id);
               ok &= emit_str(emitter, "port");
               ok &= emit_ulong(emitter, current_edge->ports[i]);
+              ok &= yaml_mapping_end_event_initialize(&event);
+              ok &= yaml_emitter_emit(emitter, &event);
           }
+          ok &= yaml_sequence_end_event_initialize(&event);
+          ok &= yaml_emitter_emit(emitter, &event);
 
           ok &= yaml_mapping_end_event_initialize(&event);
           ok &= yaml_emitter_emit(emitter, &event);
