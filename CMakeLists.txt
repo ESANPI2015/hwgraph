@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(hwGraph)
+project(hwgraph)
 
 include_directories(src)
 include_directories(include)
@@ -16,10 +16,10 @@ link_directories(${YAML_LIBRARY_DIRS})
 add_definitions(-DYAML_SUPPORT ${YAML_CFLAGS_OTHER})
 set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} yaml)
 
-include_directories(${hwGraphs_PKGCONFIG_INCLUDE_DIRS})
-#message(${hwGraphs_PKGCONFIG_INCLUDE_DIRS})
-link_directories(${hwGraphs_PKGCONFIG_LIBRARY_DIRS})
-add_definitions(${hwGraphs_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror)
+include_directories(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
+#message(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
+link_directories(${hwgraph_PKGCONFIG_LIBRARY_DIRS})
+add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror)
 
 set(SOURCES
     src/priority_list.c
@@ -37,9 +37,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Mo
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # at first we have a minimal cmdline app, which exports simply everything into plaintext files
-add_library(hwGraph STATIC ${SOURCES})
-target_link_libraries(hwGraph
-    ${hwGraphs_PKGCONFIG_STATIC_LIBRARIES}
+add_library(hwgraph STATIC ${SOURCES})
+target_link_libraries(hwgraph
+    ${hwgraph_PKGCONFIG_STATIC_LIBRARIES}
     )
 
 # creating a convenience target, so a user can easily execute ileggui, without cd'ing into the builddir
