@@ -9,40 +9,53 @@ SET(ENV{PKG_CONFIG_PATH}
     ${CMAKE_BINARY_DIR}:$ENV{PKG_CONFIG_PATH}
     )
 
+# Yes, we have to add the directory at least
+if(NOT TARGET hypergraph)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../hypergraph hypergraph)
+endif(NOT TARGET hypergraph)
+
 find_package(PkgConfig)
-pkg_check_modules(YAML REQUIRED yaml-0.1)
-include_directories(${YAML_INCLUDE_DIRS})
-link_directories(${YAML_LIBRARY_DIRS})
-add_definitions(-DYAML_SUPPORT ${YAML_CFLAGS_OTHER})
-set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} yaml)
+#pkg_check_modules(YAML REQUIRED yaml-cpp)
+#include_directories(${YAML_INCLUDE_DIRS})
+#link_directories(${YAML_LIBRARY_DIRS})
+#add_definitions(-DYAML_SUPPORT ${YAML_CFLAGS_OTHER})
+#set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} yaml-cpp)
+
+pkg_check_modules(hwgraph_PKGCONFIG REQUIRED
+    hypergraph yaml-cpp
+    )
 
 include_directories(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
 #message(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
 link_directories(${hwgraph_PKGCONFIG_LIBRARY_DIRS})
-add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror)
+add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror -std=c++11)
 
 set(SOURCES
-    src/priority_list.c
-    src/hwg.c
-    src/hwg_yaml_writer.c
-    src/hwg_yaml_loader.c
+    src/HwGraph.cpp
+    #src/priority_list.c
+    #src/hwg.c
+    #src/hwg_yaml_writer.c
+    #src/hwg_yaml_loader.c
     )
 set(HEADERS
-    include/priority_list.h
-    include/hwg.h
-    include/hwg_yaml.h
+    include/HwGraph.hpp
+    #include/priority_list.h
+    #include/hwg.h
+    #include/hwg_yaml.h
     )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# at first we have a minimal cmdline app, which exports simply everything into plaintext files
 add_library(hwgraph STATIC ${SOURCES})
 target_link_libraries(hwgraph
     ${hwgraph_PKGCONFIG_STATIC_LIBRARIES}
     )
 
-# creating a convenience target, so a user can easily execute ileggui, without cd'ing into the builddir
+add_executable(testHwGraph test/testHwGraph.cpp)
+target_link_libraries(testHwGraph hwgraph)
+install(TARGETS testHwGraph
+RUNTIME DESTINATION bin)
 
 # pkg-config, to be installed:
 configure_file(${PROJECT_NAME}.pc.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
