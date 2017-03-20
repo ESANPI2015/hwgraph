@@ -31,10 +31,10 @@ link_directories(${hwgraph_PKGCONFIG_LIBRARY_DIRS})
 add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror -std=c++11)
 
 set(SOURCES
-    src/HwGraph.cpp
+    src/ComputationalGraph.cpp
     )
 set(HEADERS
-    include/HwGraph.hpp
+    include/ComputationalGraph.hpp
     )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")

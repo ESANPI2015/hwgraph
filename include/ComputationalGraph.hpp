@@ -1,5 +1,5 @@
-#ifndef _HW_GRAPH_HPP
-#define _HW_GRAPH_HPP
+#ifndef _HW_COMPUTATIONAL_GRAPH_HPP
+#define _HW_COMPUTATIONAL_GRAPH_HPP
 
 #include "Hyperedge.hpp"
 
@@ -19,14 +19,14 @@ namespace Computational {
     * Would it be better to just use SIMPLE 2-hyperedges for the relations (everything based on 1-1 relations)?
       NOTE: This would better fit to databases with fixed tables like ID -> (ID, ID)
     * Can interfaces of type 0-hyperedge be owned by more than one device?
-    * Subclassing versus Subgraphs: Specify this.
+    * Subclassing versus Subgraphs: Specify this. How do we handle devices containing other devices?
 */
 
 class Graph : public Hyperedge
 {
     public:
         // Constructor which creates a Hyperedge and all standard subsets
-        Graph(const std::string& label="CHWG");
+        Graph(const std::string& label="Computational Hardware");
 
         // Factory functions
         Hyperedge* createDevice(const std::string& name="Device");

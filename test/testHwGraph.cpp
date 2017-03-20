@@ -1,4 +1,4 @@
-#include "HwGraph.hpp"
+#include "ComputationalGraph.hpp"
 
 #include <iostream>
 #include <cassert>
