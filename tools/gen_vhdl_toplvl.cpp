@@ -21,7 +21,7 @@ int main(void)
     std::cout << Hyperedge::serialize(&hwgraph);
 
     // Get the superclass of all devices
-    auto superDevice = hwgraph.members("Devices").begin()->second;
+    auto superDevice = hwgraph.devices();
     // Find specific device(s)
     auto devices = superDevice->membersOf()->members("TestDevice");
     // For each of these devices
@@ -45,8 +45,13 @@ int main(void)
         // III. intersect: Contains only has(device,*) relations
         // IV. get the membersOf(): Contains (has(device, *), device, *)
         // V. Intersect with all interfaces: Contains all interfaces of device
-        auto query = (device->supersOf()->intersect(hwgraph.labelPartOf("has")))->membersOf()->intersect(hwgraph.labelPartOf("Interfaces")->membersOf());
-        std::cout << Hyperedge::serialize(query);
+        auto query = (device->supersOf()->intersect(hwgraph.labelPartOf("has")))->membersOf()->intersect(hwgraph.interfaces()->membersOf());
+        for (auto memberIt : query->members())
+        {
+            auto interface = memberIt.second;
+            std::cout << "-- Interface: " << interface->label() << std::endl;
+            std::cout << "-- TODO: How do we know what pins/groups and directions we have to assign here?\n";
+        }
         std::cout << ");\n";
         std::cout << "end " << device->label() << ";\n";
         std::cout << "architecture BEHAVIOURAL of " << device->label() << " is\n";

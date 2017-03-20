@@ -32,6 +32,11 @@ class Graph : public Hyperedge
         Hyperedge* createDevice(const std::string& name="Device");
         Hyperedge* createInterface(const std::string& name="Interface");
         Hyperedge* createBus(const std::string& name="Bus");
+
+        // Read access
+        Hyperedge* devices();
+        Hyperedge* interfaces();
+        Hyperedge* busses();
     
         // Devices & Interfaces
         bool has(Hyperedge* device, Hyperedge* interface);
@@ -44,6 +49,10 @@ class Graph : public Hyperedge
         bool connects(Hyperedge* bus, Hyperedge::Hyperedges interfaces);
         bool connects(Hyperedge::Hyperedges busses, Hyperedge* interface);
         bool connects(Hyperedge::Hyperedges busses, Hyperedge::Hyperedges interfaces);
+
+    private:
+        // Ids of superclasses created by this modelling domain
+        unsigned _devId, _ifId, _busId;
 };
 
 }

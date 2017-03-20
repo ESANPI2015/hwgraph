@@ -78,7 +78,7 @@ int main(void)
     Hyperedge *intersection = superQuery->intersect(memberQuery);
     std::cout << Hyperedge::serialize(intersection) << std::endl;
 
-    assert(intersection->cardinality() == 1);
+    assert(intersection->cardinality() == 0);
 
     // TODO NEXT:
     // import/export

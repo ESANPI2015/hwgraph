@@ -9,44 +9,60 @@ Graph::Graph(const std::string& label)
     Hyperedge *devices = Hyperedge::create("Devices");
     Hyperedge *interfaces = Hyperedge::create("Interfaces");
     Hyperedge *busses = Hyperedge::create("Busses");
-    // TODO: Register the new hyperedges for faster access?
-    // Or provide convenient private member function
     contains(devices);
     contains(interfaces);
     contains(busses);
+    // Register Ids for easier access
+    _devId = devices->id();
+    _ifId = interfaces->id();
+    _busId = busses->id();
+}
+
+Hyperedge* Graph::devices()
+{
+    // TODO: When we have a find by id function, we should use that one (because labels are not guaranteed to be unique)
+    Hyperedge *devs = members("Devices").begin()->second;
+    return devs->id() == _devId ? devs : NULL;
+}
+
+Hyperedge* Graph::interfaces()
+{
+    Hyperedge *ifs = members("Interfaces").begin()->second;
+    return ifs->id() == _ifId ? ifs : NULL;
+}
+
+Hyperedge* Graph::busses()
+{
+    Hyperedge *buss = members("Busses").begin()->second;
+    return buss->id() == _busId ? buss : NULL;
 }
 
 Hyperedge* Graph::createDevice(const std::string& name)
 {
     Hyperedge *newbie = (Hyperedge::create(name));
-    Hyperedge *devices = (members("Devices").begin()->second);
-    devices->contains(newbie);
+    devices()->contains(newbie);
     return newbie;
 }
 
 Hyperedge* Graph::createInterface(const std::string& name)
 {
     Hyperedge *newbie = (Hyperedge::create(name));
-    Hyperedge *interfaces = (members("Interfaces").begin()->second);
-    interfaces->contains(newbie);
+    interfaces()->contains(newbie);
     return newbie;
 }
 
 Hyperedge* Graph::createBus(const std::string& name)
 {
     Hyperedge *newbie = (Hyperedge::create(name));
-    Hyperedge *busses = (members("Busses").begin()->second);
-    busses->contains(newbie);
+    busses()->contains(newbie);
     return newbie;
 }
 
 bool Graph::has(Hyperedge* device, Hyperedge* interface)
 {
     // At first, we have to add device & interface to the corresponding sets
-    Hyperedge *devices = (members("Devices").begin()->second);
-    Hyperedge *interfaces = (members("Interfaces").begin()->second);
-    devices->contains(device);
-    interfaces->contains(interface);
+    devices()->contains(device);
+    interfaces()->contains(interface);
 
     // TODO: Then we have to check if the device already HAS this interface, right? Or is it ok to have redundant info?
     
@@ -94,10 +110,8 @@ bool Graph::has(Hyperedge::Hyperedges devices, Hyperedge::Hyperedges interfaces)
 bool Graph::connects(Hyperedge* bus, Hyperedge* interface)
 {
     // At first, we have to add device & interface to the corresponding sets
-    Hyperedge *busses = (members("Busses").begin()->second);
-    Hyperedge *interfaces = (members("Interfaces").begin()->second);
-    busses->contains(bus);
-    interfaces->contains(interface);
+    busses()->contains(bus);
+    interfaces()->contains(interface);
 
     // TODO: Then we have to check if a bus already CONNECTS this interface, right? Or is it ok to have redundant info?
     
