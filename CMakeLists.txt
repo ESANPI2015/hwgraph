@@ -32,16 +32,9 @@ add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror
 
 set(SOURCES
     src/HwGraph.cpp
-    #src/priority_list.c
-    #src/hwg.c
-    #src/hwg_yaml_writer.c
-    #src/hwg_yaml_loader.c
     )
 set(HEADERS
     include/HwGraph.hpp
-    #include/priority_list.h
-    #include/hwg.h
-    #include/hwg_yaml.h
     )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
