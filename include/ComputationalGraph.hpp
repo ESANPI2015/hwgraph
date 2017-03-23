@@ -1,7 +1,8 @@
 #ifndef _HW_COMPUTATIONAL_GRAPH_HPP
 #define _HW_COMPUTATIONAL_GRAPH_HPP
 
-#include "Hyperedge.hpp"
+#include "Set.hpp"
+#include "Relation.hpp"
 
 namespace Hardware {
 namespace Computational {
@@ -20,35 +21,38 @@ namespace Computational {
       NOTE: This would better fit to databases with fixed tables like ID -> (ID, ID)
     * Can interfaces of type 0-hyperedge be owned by more than one device?
     * Subclassing versus Subgraphs: Specify this. How do we handle devices containing other devices?
+      -> SEE SUBSUMPTION AND COMPOSITION RELATIONS
+    * Should we introduce intermediate concepts like Ownership(has) or others which are shared amongst other domains?
 */
 
-class Graph : public Hyperedge
+class Graph : public Set
 {
     public:
-        // Constructor which creates a Hyperedge and all standard subsets
+        // Constructor which creates a Set and all standard subsets
         Graph(const std::string& label="Computational Hardware");
 
         // Factory functions
-        Hyperedge* createDevice(const std::string& name="Device");
-        Hyperedge* createInterface(const std::string& name="Interface");
-        Hyperedge* createBus(const std::string& name="Bus");
+        Set* createDevice(const std::string& name="Device");
+        Set* createInterface(const std::string& name="Interface");
+        Set* createBus(const std::string& name="Bus");
 
         // Read access
-        Hyperedge* devices();
-        Hyperedge* interfaces();
-        Hyperedge* busses();
+        Set* devices();
+        Set* interfaces();
+        Set* busses();
     
         // Devices & Interfaces
-        bool has(Hyperedge* device, Hyperedge* interface);
-        bool has(Hyperedge* device, Hyperedge::Hyperedges interfaces);
-        bool has(Hyperedge::Hyperedges devices, Hyperedge* interface);
-        bool has(Hyperedge::Hyperedges devices, Hyperedge::Hyperedges interfaces);
+        bool has(Set* device, Set* interface);
+        bool has(Set* device, Set::Sets interfaces);
+        // The following is allowed because DEVICE CLASSES should share INTERFACE CLASSES
+        bool has(Set::Sets devices, Set* interface);
+        bool has(Set::Sets devices, Set::Sets interfaces);
 
         // Interfaces & Busses
-        bool connects(Hyperedge* bus, Hyperedge* interface);
-        bool connects(Hyperedge* bus, Hyperedge::Hyperedges interfaces);
-        bool connects(Hyperedge::Hyperedges busses, Hyperedge* interface);
-        bool connects(Hyperedge::Hyperedges busses, Hyperedge::Hyperedges interfaces);
+        bool connects(Set* bus, Set* interface);
+        bool connects(Set* bus, Set::Sets interfaces);
+        bool connects(Set::Sets busses, Set* interface);
+        bool connects(Set::Sets busses, Set::Sets interfaces);
 
     private:
         // Ids of superclasses created by this modelling domain

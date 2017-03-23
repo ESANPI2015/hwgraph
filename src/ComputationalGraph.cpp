@@ -4,11 +4,11 @@ namespace Hardware {
 namespace Computational {
 
 Graph::Graph(const std::string& label)
-: Hyperedge(label)
+: Set(label)
 {
-    Hyperedge *devices = Hyperedge::create("Devices");
-    Hyperedge *interfaces = Hyperedge::create("Interfaces");
-    Hyperedge *busses = Hyperedge::create("Busses");
+    Set *devices = Set::create("Devices");
+    Set *interfaces = Set::create("Interfaces");
+    Set *busses = Set::create("Busses");
     contains(devices);
     contains(interfaces);
     contains(busses);
@@ -18,47 +18,43 @@ Graph::Graph(const std::string& label)
     _busId = busses->id();
 }
 
-Hyperedge* Graph::devices()
+Set* Graph::devices()
 {
-    // TODO: When we have a find by id function, we should use that one (because labels are not guaranteed to be unique)
-    Hyperedge *devs = members("Devices").begin()->second;
-    return devs->id() == _devId ? devs : NULL;
+    return static_cast<Set*>(_created[_devId]);
 }
 
-Hyperedge* Graph::interfaces()
+Set* Graph::interfaces()
 {
-    Hyperedge *ifs = members("Interfaces").begin()->second;
-    return ifs->id() == _ifId ? ifs : NULL;
+    return static_cast<Set*>(_created[_ifId]);
 }
 
-Hyperedge* Graph::busses()
+Set* Graph::busses()
 {
-    Hyperedge *buss = members("Busses").begin()->second;
-    return buss->id() == _busId ? buss : NULL;
+    return static_cast<Set*>(_created[_busId]);
 }
 
-Hyperedge* Graph::createDevice(const std::string& name)
+Set* Graph::createDevice(const std::string& name)
 {
-    Hyperedge *newbie = (Hyperedge::create(name));
+    Set *newbie = (Set::create(name));
     devices()->contains(newbie);
     return newbie;
 }
 
-Hyperedge* Graph::createInterface(const std::string& name)
+Set* Graph::createInterface(const std::string& name)
 {
-    Hyperedge *newbie = (Hyperedge::create(name));
+    Set *newbie = (Set::create(name));
     interfaces()->contains(newbie);
     return newbie;
 }
 
-Hyperedge* Graph::createBus(const std::string& name)
+Set* Graph::createBus(const std::string& name)
 {
-    Hyperedge *newbie = (Hyperedge::create(name));
+    Set *newbie = (Set::create(name));
     busses()->contains(newbie);
     return newbie;
 }
 
-bool Graph::has(Hyperedge* device, Hyperedge* interface)
+bool Graph::has(Set* device, Set* interface)
 {
     // At first, we have to add device & interface to the corresponding sets
     devices()->contains(device);
@@ -67,14 +63,13 @@ bool Graph::has(Hyperedge* device, Hyperedge* interface)
     // TODO: Then we have to check if the device already HAS this interface, right? Or is it ok to have redundant info?
     
     // Finally we create a new relation (1-to-1)
-    Hyperedge *has = (Hyperedge::create("has"));
-    has->contains(device);
-    has->contains(interface);
-    contains(has);
+    Relation *has = (Relation::create("has"));
+    has->from(device);
+    has->to(interface);
     return true;
 }
 
-bool Graph::has(Hyperedge* device, Hyperedge::Hyperedges interfaces)
+bool Graph::has(Set* device, Set::Sets interfaces)
 {
     // 1-N relation based on 2-hyperedges (1-1 relations)
     for (auto interfaceIt : interfaces)
@@ -85,7 +80,7 @@ bool Graph::has(Hyperedge* device, Hyperedge::Hyperedges interfaces)
     return true;
 }
 
-bool Graph::has(Hyperedge::Hyperedges devices, Hyperedge* interface)
+bool Graph::has(Set::Sets devices, Set* interface)
 {
     // N-1 relation based on 2-hyperedges
     for (auto deviceIt : devices)
@@ -96,7 +91,7 @@ bool Graph::has(Hyperedge::Hyperedges devices, Hyperedge* interface)
     return true;
 }
 
-bool Graph::has(Hyperedge::Hyperedges devices, Hyperedge::Hyperedges interfaces)
+bool Graph::has(Set::Sets devices, Set::Sets interfaces)
 {
     // N-M relation based on N * (1-M) relations
     for (auto deviceIt : devices)
@@ -107,7 +102,7 @@ bool Graph::has(Hyperedge::Hyperedges devices, Hyperedge::Hyperedges interfaces)
     return true;
 }
 
-bool Graph::connects(Hyperedge* bus, Hyperedge* interface)
+bool Graph::connects(Set* bus, Set* interface)
 {
     // At first, we have to add device & interface to the corresponding sets
     busses()->contains(bus);
@@ -116,14 +111,13 @@ bool Graph::connects(Hyperedge* bus, Hyperedge* interface)
     // TODO: Then we have to check if a bus already CONNECTS this interface, right? Or is it ok to have redundant info?
     
     // Finally we create a new relation (1-to-1)
-    Hyperedge *connects = (Hyperedge::create("connects"));
-    connects->contains(bus);
-    connects->contains(interface);
-    contains(connects);
+    Relation *connects = (Relation::create("connects"));
+    connects->from(bus);
+    connects->to(interface);
     return true;
 }
 
-bool Graph::connects(Hyperedge* bus, Hyperedge::Hyperedges interfaces)
+bool Graph::connects(Set* bus, Set::Sets interfaces)
 {
     // 1-N relation based on 2-hyperedges (1-1 relations)
     for (auto interfaceIt : interfaces)
@@ -134,7 +128,7 @@ bool Graph::connects(Hyperedge* bus, Hyperedge::Hyperedges interfaces)
     return true;
 }
 
-bool Graph::connects(Hyperedge::Hyperedges busses, Hyperedge* interface)
+bool Graph::connects(Set::Sets busses, Set* interface)
 {
     // N-1 relation based on 2-hyperedges (1-1 relations)
     for (auto busIt : busses)
@@ -145,7 +139,7 @@ bool Graph::connects(Hyperedge::Hyperedges busses, Hyperedge* interface)
     return true;
 }
 
-bool Graph::connects(Hyperedge::Hyperedges busses, Hyperedge::Hyperedges interfaces)
+bool Graph::connects(Set::Sets busses, Set::Sets interfaces)
 {
     // N-M relation based on N * (1-M) relations
     for (auto busIt : busses)
