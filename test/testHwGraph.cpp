@@ -19,25 +19,25 @@ int main(void)
     hwgraph.createBus();
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     std::cout << "*** Assigning dummy interface to device ***" << std::endl;
-    Hyperedge *devQuery = (hwgraph.labelPartOf("Device"));
-    Hyperedge *ifQuery = (hwgraph.labelPartOf("Interface"));
+    Set *devQuery = hwgraph.devices();
+    Set *ifQuery =  hwgraph.interfaces();
     std::cout << Hyperedge::serialize(devQuery) << std::endl;
     assert(devQuery->pointingTo().size() == 1);
     std::cout << Hyperedge::serialize(ifQuery) << std::endl;
     assert(ifQuery->pointingTo().size() == 1);
-    hwgraph.has(Set::promote(devQuery->pointingTo("Device")), Set::promote(ifQuery->pointingTo("Interface")));
+    hwgraph.has(Set::promote(devQuery->pointingTo()), Set::promote(ifQuery->pointingTo()));
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     // So far so good. Now we want a second interface
     std::cout << "*** Adding another dummy interface ***" << std::endl;
-    hwgraph.has(Set::promote(devQuery->pointingTo("Device")), hwgraph.createInterface());
+    hwgraph.has(Set::promote(devQuery->pointingTo()), hwgraph.createInterface());
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     std::cout << "*** Deleting queries ***" << std::endl;
     delete devQuery;
     delete ifQuery;
     std::cout << "*** Connect interfaces ***" << std::endl;
-    Hyperedge *busQuery = (hwgraph.labelPartOf("Bus"));
+    Hyperedge *busQuery = hwgraph.busses();
     assert(busQuery->pointingTo().size() == 1);
-    ifQuery = (hwgraph.labelPartOf("Interface")); // Gives us two interfaces :)
+    ifQuery = hwgraph.interfaces(); // Gives us two interfaces :)
     assert(ifQuery->pointingTo().size() == 2);
     std::cout << Hyperedge::serialize(busQuery) << std::endl;
     std::cout << Hyperedge::serialize(ifQuery) << std::endl;
@@ -59,18 +59,9 @@ int main(void)
     x86->isA(proc);
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
 
-    std::cout << "*** Get all 0-Hyperedges or INSTANCES ***" << std::endl;
-    std::cout << Hyperedge::serialize(hwgraph.cardinalityLessThanOrEqual()) << std::endl;
-    
-    //std::cout << "*** Get all DIRECT supersets of x86 ***" << std::endl;
-    //for (auto super : x86->supers())
-    //{
-    //    std::cout << super.second->label() << std::endl;
-    //}
-
-    //std::cout << "*** Get all supersets of x86 ***" << std::endl;
-    //Hyperedge *superQuery = x86->supersOf();
-    //std::cout << Hyperedge::serialize(superQuery) << std::endl;
+    std::cout << "*** Get all supertypes of x86 ***" << std::endl;
+    Hyperedge *superQuery = x86->kindOf();
+    std::cout << Hyperedge::serialize(superQuery) << std::endl;
 
     //std::cout << "** Cycle detection in Hierarchy ***" << std::endl;
     //Hyperedge *memberQuery = x86->membersOf();

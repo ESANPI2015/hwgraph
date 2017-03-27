@@ -6,29 +6,69 @@ namespace Computational {
 Graph::Graph(const std::string& label)
 : Set(label)
 {
-    Set *devices = Set::create("Devices");
-    Set *interfaces = Set::create("Interfaces");
-    Set *busses = Set::create("Busses");
-    contains(devices);
-    contains(interfaces);
-    contains(busses);
+    // NOTE: These are TYPES/SUPERCLASSES
+    Set *device = Set::create("Device");
+    Set *interface = Set::create("Interface");
+    Set *bus = Set::create("Bus");
+    device->memberOf(this);
+    interface->memberOf(this);
+    bus->memberOf(this);
     // Register Ids for easier access
-    _devId = devices->id();
-    _ifId = interfaces->id();
-    _busId = busses->id();
+    _devId = device->id();
+    _ifId = interface->id();
+    _busId = bus->id();
 }
 
 Set* Graph::devices()
 {
-    return static_cast<Set*>(_created[_devId]);
+    Hyperedge *query;
+    // This query gives all subtypes of this
+    query = device()->traversal(
+        [&](Hyperedge *x){return ((x->id() != device()->id()) && (x->label() != "isA")) ? true : false;},
+        [](Hyperedge *x, Hyperedge *y){return ((x->label() == "isA") || (y->label() == "isA")) ? true : false;},
+        "Devices",
+        UP
+    );
+    return promote(query);
 }
 
 Set* Graph::interfaces()
 {
-    return static_cast<Set*>(_created[_ifId]);
+    Hyperedge *query;
+    // This query gives all subtypes of this
+    query = interface()->traversal(
+        [&](Hyperedge *x){return ((x->id() != interface()->id()) && (x->label() != "isA")) ? true : false;},
+        [](Hyperedge *x, Hyperedge *y){return ((x->label() == "isA") || (y->label() == "isA")) ? true : false;},
+        "Interfaces",
+        UP
+    );
+    return promote(query);
 }
 
 Set* Graph::busses()
+{
+    Hyperedge *query;
+    // This query gives all subtypes of this
+    query = bus()->traversal(
+        [&](Hyperedge *x){return ((x->id() != bus()->id()) && (x->label() != "isA")) ? true : false;},
+        [](Hyperedge *x, Hyperedge *y){return ((x->label() == "isA") || (y->label() == "isA")) ? true : false;},
+        "Busses",
+        UP
+    );
+    return promote(query);
+}
+
+Set* Graph::device()
+{
+    return static_cast<Set*>(_created[_devId]);
+}
+
+Set* Graph::interface()
+{
+    return static_cast<Set*>(_created[_ifId]);
+}
+
+Set* Graph::bus()
 {
     return static_cast<Set*>(_created[_busId]);
 }
@@ -36,32 +76,30 @@ Set* Graph::busses()
 Set* Graph::createDevice(const std::string& name)
 {
     Set *newbie = (Set::create(name));
-    devices()->contains(newbie);
+    newbie->isA(device());
     return newbie;
 }
 
 Set* Graph::createInterface(const std::string& name)
 {
     Set *newbie = (Set::create(name));
-    interfaces()->contains(newbie);
+    newbie->isA(interface());
     return newbie;
 }
 
 Set* Graph::createBus(const std::string& name)
 {
     Set *newbie = (Set::create(name));
-    busses()->contains(newbie);
+    newbie->isA(bus());
     return newbie;
 }
 
 bool Graph::has(Set* device, Set* interface)
 {
     // At first, we have to add device & interface to the corresponding sets
-    devices()->contains(device);
-    interfaces()->contains(interface);
+    device->isA(this->device());
+    interface->isA(this->interface());
 
-    // TODO: Then we have to check if the device already HAS this interface, right? Or is it ok to have redundant info?
-    
     // Finally we create a new relation (1-to-1)
     Relation *has = (Relation::create("has"));
     has->from(device);
@@ -105,11 +143,9 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
 bool Graph::connects(Set* bus, Set* interface)
 {
     // At first, we have to add device & interface to the corresponding sets
-    busses()->contains(bus);
-    interfaces()->contains(interface);
+    bus->isA(this->bus());
+    interface->isA(this->interface());
 
-    // TODO: Then we have to check if a bus already CONNECTS this interface, right? Or is it ok to have redundant info?
-    
     // Finally we create a new relation (1-to-1)
     Relation *connects = (Relation::create("connects"));
     connects->from(bus);

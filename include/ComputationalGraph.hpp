@@ -37,6 +37,13 @@ class Graph : public Set
         Set* createBus(const std::string& name="Bus");
 
         // Read access
+        // NOTE: Return the Superclasses
+        Set* device();
+        Set* interface();
+        Set* bus();
+
+        // Queries
+        // NOTE: Return true sets whose members are all of the same type/superclass
         Set* devices();
         Set* interfaces();
         Set* busses();
