@@ -71,6 +71,37 @@ int main(void)
 
     assert(intersection->cardinality() == 0);
 
+    std::cout << "*** Make a device out of other devices ***\n";
+    /*
+        This looks like this:
+        
+        ---------------------
+        |               PCB |
+       USB----------|       |
+        |      ----USB---   |
+        |      |   x86  |   |
+        |      ----------   |
+        |                   |
+        ---------------------
+    */
+    Set *pcb = hwgraph.createDevice("PCB");
+    x86->partOf(pcb);
+    Set *usb = hwgraph.createInterface("USB");
+    Set *usb1 = hwgraph.createInterface("USB");
+    Set *usb2 = hwgraph.createInterface("USB");
+    usb1->isA(usb);
+    usb2->isA(usb);
+    hwgraph.has(pcb, usb1);
+    hwgraph.has(x86, usb2);
+    Set *bus = hwgraph.createBus("USB");
+    hwgraph.connects(bus, usb1);
+    hwgraph.connects(bus, usb2);
+
+    for (auto succIt : pcb->predecessors<Set>()->pointingTo())
+    {
+        std::cout << succIt.second << std::endl;
+    }
+
     // TODO NEXT:
     // import/export
     // constraints/rules
