@@ -18,10 +18,10 @@ With these concepts both processing devices, there interfaces and their intercon
 ## Status
 
 * Defined Computational Hardware Graph
+* Use relation/set specific queries when they become available in the hypergraph library
 * First tests work (but are not yet complete)
 
 ## ToDo
 
 * Complete the tests
-* Use relation/set specific queries when they become available in the hypergraph library
 * Make the experimental generator for toplevel VHDL code work again

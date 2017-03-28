@@ -60,16 +60,16 @@ int main(void)
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
 
     std::cout << "*** Get all supertypes of x86 ***" << std::endl;
-    Hyperedge *superQuery = x86->kindOf();
+    Set *superQuery = x86->kindOf();
     std::cout << Hyperedge::serialize(superQuery) << std::endl;
 
     //std::cout << "** Cycle detection in Hierarchy ***" << std::endl;
-    //Hyperedge *memberQuery = x86->membersOf();
-    //std::cout << Hyperedge::serialize(memberQuery) << std::endl;
-    //Hyperedge *intersection = superQuery->intersect(memberQuery);
-    //std::cout << Hyperedge::serialize(intersection) << std::endl;
+    Set *subQuery = x86->subclasses();
+    std::cout << Hyperedge::serialize(subQuery) << std::endl;
+    Set *intersection = superQuery->intersect(subQuery);
+    std::cout << Hyperedge::serialize(intersection) << std::endl;
 
-    //assert(intersection->cardinality() == 0);
+    assert(intersection->cardinality() == 0);
 
     // TODO NEXT:
     // import/export
