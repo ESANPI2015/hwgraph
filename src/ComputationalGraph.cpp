@@ -96,14 +96,26 @@ Set* Graph::createBus(const std::string& name)
 
 bool Graph::has(Set* device, Set* interface)
 {
-    // At first, we have to add device & interface to the corresponding sets
-    device->isA(this->device());
-    interface->isA(this->interface());
+    bool result = true;
 
-    // Finally we create a new relation (1-to-1)
-    Relation *has = (Relation::create("has"));
-    has->from(device);
-    has->to(interface);
+    // At first, we have to add device & interface to the corresponding sets
+    result &= device->isA(this->device());
+    result &= interface->isA(this->interface());
+
+    // Find a has relation in device
+    auto edges = device->pointingTo("has");
+    Relation *has = NULL;
+    if (edges.size())
+    {
+        has = static_cast< Relation *>(edges.begin()->second);
+        result &= has->to(interface);
+    } else {
+        // Finally we create a new relation (1-to-1)
+        has = (Relation::create("has"));
+        result &= has->from(device);
+        result &= has->to(interface);
+    }
+
     return true;
 }
 
@@ -142,14 +154,26 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
 
 bool Graph::connects(Set* bus, Set* interface)
 {
-    // At first, we have to add device & interface to the corresponding sets
-    bus->isA(this->bus());
-    interface->isA(this->interface());
+    bool result = true;
 
-    // Finally we create a new relation (1-to-1)
-    Relation *connects = (Relation::create("connects"));
-    connects->from(bus);
-    connects->to(interface);
+    // At first, we have to add device & interface to the corresponding sets
+    result &= bus->isA(this->bus());
+    result &= interface->isA(this->interface());
+
+    // Find a connects relation in device
+    auto edges = bus->pointingTo("connects");
+    Relation *connects = NULL;
+    if (edges.size())
+    {
+        connects = static_cast< Relation *>(edges.begin()->second);
+        result &= connects->to(interface);
+    } else {
+        // Finally we create a new relation (1-to-1)
+        connects = (Relation::create("connects"));
+        result &= connects->from(bus);
+        result &= connects->to(interface);
+    }
+
     return true;
 }
 

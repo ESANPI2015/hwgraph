@@ -97,15 +97,19 @@ int main(void)
     hwgraph.connects(bus, usb1);
     hwgraph.connects(bus, usb2);
 
-    for (auto succIt : pcb->predecessors<Set>()->pointingTo())
+    auto pred = pcb->predecessors<Set>();
+    for (auto predIt : pred->pointingTo())
     {
-        std::cout << succIt.second << std::endl;
+        std::cout << predIt.second << std::endl;
     }
+    delete pred;
 
     // TODO NEXT:
     // import/export
     // constraints/rules
 
+    std::cout << "*** Final state ***" << std::endl;
+    std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     std::cout << "*** End of test ***" << std::endl;
     Hyperedge::cleanup();
 }
