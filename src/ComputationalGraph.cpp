@@ -21,41 +21,17 @@ Graph::Graph(const std::string& label)
 
 Set* Graph::devices()
 {
-    Set *query;
-    // This query gives all subtypes of this
-    query = device()->traversal<Set>(
-        [&](Hyperedge *x){return ((x->id() != device()->id()) && (x->label() != "isA")) ? true : false;},
-        [](Hyperedge *x, Hyperedge *y){return ((x->label() == "isA") || (y->label() == "isA")) ? true : false;},
-        "Devices",
-        UP
-    );
-    return query;
+    return device()->subclasses();
 }
 
 Set* Graph::interfaces()
 {
-    Set *query;
-    // This query gives all subtypes of this
-    query = interface()->traversal<Set>(
-        [&](Hyperedge *x){return ((x->id() != interface()->id()) && (x->label() != "isA")) ? true : false;},
-        [](Hyperedge *x, Hyperedge *y){return ((x->label() == "isA") || (y->label() == "isA")) ? true : false;},
-        "Interfaces",
-        UP
-    );
-    return query;
+    return interface()->subclasses();
 }
 
 Set* Graph::busses()
 {
-    Set *query;
-    // This query gives all subtypes of this
-    query = bus()->traversal<Set>(
-        [&](Hyperedge *x){return ((x->id() != bus()->id()) && (x->label() != "isA")) ? true : false;},
-        [](Hyperedge *x, Hyperedge *y){return ((x->label() == "isA") || (y->label() == "isA")) ? true : false;},
-        "Busses",
-        UP
-    );
-    return query;
+    return bus()->subclasses();
 }
 
 Set* Graph::device()
