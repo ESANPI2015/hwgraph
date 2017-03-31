@@ -66,7 +66,7 @@ int main(void)
     //std::cout << "** Cycle detection in Hierarchy ***" << std::endl;
     Set *subQuery = x86->subclasses();
     std::cout << Hyperedge::serialize(subQuery) << std::endl;
-    Set *intersection = superQuery->intersect(subQuery);
+    Set *intersection = Set::promote(superQuery->intersect(subQuery));
     std::cout << Hyperedge::serialize(intersection) << std::endl;
 
     assert(intersection->cardinality() == 0);
@@ -97,7 +97,7 @@ int main(void)
     hwgraph.connects(bus, usb1);
     hwgraph.connects(bus, usb2);
 
-    auto pred = pcb->predecessors<Set>();
+    auto pred = pcb->predecessors();
     for (auto predIt : pred->pointingTo())
     {
         std::cout << predIt.second << std::endl;

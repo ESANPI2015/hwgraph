@@ -43,7 +43,7 @@ int main(void)
         // III. intersect: Contains only has(device,*) relations
         // IV. get the membersOf(): Contains (has(device, *), device, *)
         // V. Intersect with all interfaces: Contains all interfaces of device
-        auto query = (device->successors<Set>()->intersect<Set>(device->labelPartOf<Set>("has")))->successors<Set>()->intersect<Set>(hwgraph.interfaces());
+        auto query = (device->successors()->intersect(device->labelPartOf("has")))->successors()->intersect(hwgraph.interfaces());
         for (auto memberIt : query->pointingTo())
         {
             auto interface = memberIt.second;
