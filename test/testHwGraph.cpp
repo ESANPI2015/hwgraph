@@ -22,26 +22,26 @@ int main(void)
     Set *devQuery = hwgraph.devices();
     Set *ifQuery =  hwgraph.interfaces();
     std::cout << Hyperedge::serialize(devQuery) << std::endl;
-    assert(devQuery->pointingTo().size() == 1);
+    assert(devQuery->directMembers().size() == 1);
     std::cout << Hyperedge::serialize(ifQuery) << std::endl;
-    assert(ifQuery->pointingTo().size() == 1);
-    hwgraph.has(Set::promote(devQuery->pointingTo()), Set::promote(ifQuery->pointingTo()));
+    assert(ifQuery->directMembers().size() == 1);
+    hwgraph.has(devQuery->directMembers(), ifQuery->directMembers());
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     // So far so good. Now we want a second interface
     std::cout << "*** Adding another dummy interface ***" << std::endl;
-    hwgraph.has(Set::promote(devQuery->pointingTo()), hwgraph.createInterface());
+    hwgraph.has(devQuery->directMembers(), hwgraph.createInterface());
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     std::cout << "*** Deleting queries ***" << std::endl;
     delete devQuery;
     delete ifQuery;
     std::cout << "*** Connect interfaces ***" << std::endl;
-    Hyperedge *busQuery = hwgraph.busses();
-    assert(busQuery->pointingTo().size() == 1);
+    Set *busQuery = hwgraph.busses();
+    assert(busQuery->directMembers().size() == 1);
     ifQuery = hwgraph.interfaces(); // Gives us two interfaces :)
-    assert(ifQuery->pointingTo().size() == 2);
+    assert(ifQuery->directMembers().size() == 2);
     std::cout << Hyperedge::serialize(busQuery) << std::endl;
     std::cout << Hyperedge::serialize(ifQuery) << std::endl;
-    hwgraph.connects(Set::promote(busQuery->pointingTo()), Set::promote(ifQuery->pointingTo()));
+    hwgraph.connects(busQuery->directMembers(), ifQuery->directMembers());
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     // Ok, we created a device, two interfaces and a bus to connect them
     // Voila, we have our first network
@@ -49,7 +49,7 @@ int main(void)
     // Create a device EXTERNALLY and let it then HAVE an interface
     std::cout << "*** Pull externally defined device into domain when getting interfaces ***" << std::endl;
     Set *decoupled = Set::create("oO");
-    hwgraph.has(decoupled, Set::promote(ifQuery->pointingTo()));
+    hwgraph.has(decoupled, ifQuery->directMembers());
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
     
     // Create a sub-device ... that means that e.g. a x86 is a subdevice of processor
@@ -60,13 +60,14 @@ int main(void)
     std::cout << Hyperedge::serialize(&hwgraph) << std::endl;
 
     std::cout << "*** Get all supertypes of x86 ***" << std::endl;
-    Set *superQuery = x86->kindOf();
+    Relation *superQuery = x86->kindOf();
     std::cout << Hyperedge::serialize(superQuery) << std::endl;
 
     //std::cout << "** Cycle detection in Hierarchy ***" << std::endl;
+    Set *superQuerySet = Set::create(Set::promote(superQuery->pointingTo()), "superclasses");
     Set *subQuery = x86->subclasses();
     std::cout << Hyperedge::serialize(subQuery) << std::endl;
-    Set *intersection = Set::promote(superQuery->intersect(subQuery));
+    Set *intersection = superQuerySet->intersect(subQuery);
     std::cout << Hyperedge::serialize(intersection) << std::endl;
 
     assert(intersection->cardinality() == 0);
