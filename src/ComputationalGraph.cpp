@@ -21,17 +21,20 @@ Graph::Graph(const std::string& label)
 
 Set* Graph::devices()
 {
-    return device()->subclasses();
+    Relation *superOf = device()->superclassOf();
+    return Set::create(Set::promote(superOf->pointingTo()), "Devices");
 }
 
 Set* Graph::interfaces()
 {
-    return interface()->subclasses();
+    Relation *superOf = interface()->superclassOf();
+    return Set::create(Set::promote(superOf->pointingTo()), "Interfaces");
 }
 
 Set* Graph::busses()
 {
-    return bus()->subclasses();
+    Relation *superOf = bus()->superclassOf();
+    return Set::create(Set::promote(superOf->pointingTo()), "Busses");
 }
 
 Set* Graph::device()

@@ -43,7 +43,7 @@ class Graph : public Set
         Set* bus();
 
         // Queries
-        // NOTE: Return true sets whose members are all of the same type/superclass
+        // NOTE: Return true sets whose members are kinds of the superclass
         Set* devices();
         Set* interfaces();
         Set* busses();
