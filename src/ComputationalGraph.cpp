@@ -3,144 +3,58 @@
 namespace Hardware {
 namespace Computational {
 
-Graph::Graph(const std::string& label)
+// Interface
+
+Set* Interface::superclass = NULL;
+
+Interface::Interface(const std::string& label)
 : Set(label)
 {
-    // NOTE: These are TYPES/SUPERCLASSES
-    Set *device = Set::create("Device");
-    Set *interface = Set::create("Interface");
-    Set *bus = Set::create("Bus");
-    device->memberOf(this);
-    interface->memberOf(this);
-    bus->memberOf(this);
-    // Register Ids for easier access
-    _devId = device->id();
-    _ifId = interface->id();
-    _busId = bus->id();
+    // Create isA relation to the superclass
+    this->isA(Interface::Superclass());
 }
 
-Set* Graph::devices()
+Set* Interface::Superclass()
 {
-    Relation *superOf = device()->superclassOf();
-    return Set::create(Set::promote(superOf->pointingTo()), "Devices");
+    if (!Interface::superclass)
+    {
+        Interface::superclass = Set::create("Interface");
+    }
+    return Interface::superclass;
 }
 
-Set* Graph::interfaces()
+// Bus
+
+Set* Bus::superclass = NULL;
+
+Bus::Bus(const std::string& label)
+: Set(label)
 {
-    Relation *superOf = interface()->superclassOf();
-    return Set::create(Set::promote(superOf->pointingTo()), "Interfaces");
+    // Create isA relation to the superclass
+    this->isA(superclass);
 }
 
-Set* Graph::busses()
+Set* Bus::Superclass()
 {
-    Relation *superOf = bus()->superclassOf();
-    return Set::create(Set::promote(superOf->pointingTo()), "Busses");
+    if (!Bus::superclass)
+    {
+        Bus::superclass = Set::create("Bus");
+    }
+    return Bus::superclass;
 }
 
-Set* Graph::device()
-{
-    return static_cast<Set*>(_created[_devId]);
-}
-
-Set* Graph::interface()
-{
-    return static_cast<Set*>(_created[_ifId]);
-}
-
-Set* Graph::bus()
-{
-    return static_cast<Set*>(_created[_busId]);
-}
-
-Set* Graph::createDevice(const std::string& name)
-{
-    Set *newbie = (Set::create(name));
-    newbie->isA(device());
-    return newbie;
-}
-
-Set* Graph::createInterface(const std::string& name)
-{
-    Set *newbie = (Set::create(name));
-    newbie->isA(interface());
-    return newbie;
-}
-
-Set* Graph::createBus(const std::string& name)
-{
-    Set *newbie = (Set::create(name));
-    newbie->isA(bus());
-    return newbie;
-}
-
-bool Graph::has(Set* device, Set* interface)
+// Interfaces & Busses
+bool Bus::connects(Set* interface)
 {
     bool result = true;
 
-    // At first, we have to add device & interface to the corresponding sets
-    result &= device->isA(this->device());
-    result &= interface->isA(this->interface());
-
-    // Find a has relation in device
-    auto edges = device->pointingTo("has");
-    Relation *has = NULL;
-    if (edges.size())
-    {
-        has = static_cast< Relation *>(edges.begin()->second);
-        result &= has->to(interface);
-    } else {
-        // Finally we create a new relation (1-to-1)
-        has = (Relation::create("has"));
-        result &= has->from(device);
-        result &= has->to(interface);
-    }
-
-    return true;
-}
-
-bool Graph::has(Set* device, Set::Sets interfaces)
-{
-    // 1-N relation based on 2-hyperedges (1-1 relations)
-    for (auto interfaceIt : interfaces)
-    {
-        auto interface = interfaceIt.second;
-        has(device, interface);
-    }
-    return true;
-}
-
-bool Graph::has(Set::Sets devices, Set* interface)
-{
-    // N-1 relation based on 2-hyperedges
-    for (auto deviceIt : devices)
-    {
-        auto device = deviceIt.second;
-        has(device, interface);
-    }
-    return true;
-}
-
-bool Graph::has(Set::Sets devices, Set::Sets interfaces)
-{
-    // N-M relation based on N * (1-M) relations
-    for (auto deviceIt : devices)
-    {
-        auto device = deviceIt.second;
-        has(device, interfaces);
-    }
-    return true;
-}
-
-bool Graph::connects(Set* bus, Set* interface)
-{
-    bool result = true;
-
-    // At first, we have to add device & interface to the corresponding sets
-    result &= bus->isA(this->bus());
-    result &= interface->isA(this->interface());
+    // Make sure, that we are a Bus
+    result &= this->isA(Bus::Superclass());
+    // Make sure, that the set to be used as an interface is derived from interface superclass
+    result &= interface->isA(Interface::Superclass());
 
     // Find a connects relation in device
-    auto edges = bus->pointingTo("connects");
+    auto edges = pointingTo("connects");
     Relation *connects = NULL;
     if (edges.size())
     {
@@ -148,45 +62,219 @@ bool Graph::connects(Set* bus, Set* interface)
         result &= connects->to(interface);
     } else {
         // Finally we create a new relation (1-to-1)
-        connects = (Relation::create("connects"));
-        result &= connects->from(bus);
+        connects = Relation::create("connects");
+        result &= connects->from(this);
         result &= connects->to(interface);
     }
 
-    return true;
+    return result;
 }
 
-bool Graph::connects(Set* bus, Set::Sets interfaces)
+bool Bus::connects(Set::Sets interfaces)
 {
+    bool result = true;
+
     // 1-N relation based on 2-hyperedges (1-1 relations)
     for (auto interfaceIt : interfaces)
     {
         auto interface = interfaceIt.second;
-        connects(bus, interface);
+        result &= connects(interface);
     }
-    return true;
+
+    return result;
+}
+
+// Device
+Set* Device::superclass = NULL;
+
+Device::Device(const std::string& label)
+: Set(label)
+{
+    // Create isA relation to the superclass
+    this->isA(superclass);
+}
+
+Set* Device::Superclass()
+{
+    if (!Device::superclass)
+    {
+        Device::superclass = Set::create("Device");
+    }
+    return Device::superclass;
+}
+
+// Devices & Interfaces
+bool Device::has(Set* interface)
+{
+    bool result = true;
+
+    // At first, we have to add device & interface to the corresponding sets
+    result &= this->isA(Device::Superclass());
+    result &= interface->isA(Interface::Superclass());
+
+    // Find a has relation in device
+    auto edges = pointingTo("has");
+    Relation *has = NULL;
+    if (edges.size())
+    {
+        has = static_cast< Relation *>(edges.begin()->second);
+        result &= has->to(interface);
+    } else {
+        // Finally we create a new relation (1-to-1)
+        has = Relation::create("has");
+        result &= has->from(this);
+        result &= has->to(interface);
+    }
+
+    return result;
+}
+
+bool Device::has(Set::Sets interfaces)
+{
+    bool result = true;
+    // 1-N relation based on 2-hyperedges (1-1 relations)
+    for (auto interfaceIt : interfaces)
+    {
+        auto interface = interfaceIt.second;
+        result &= has(interface);
+    }
+    return result;
+}
+
+Set* Device::aggregates()
+{
+    Set::Sets result;
+    Hyperedge::Hyperedges hasRels = pointingTo("has");
+    for (auto relIt : hasRels)
+    {
+        auto others = Set::promote(relIt.second->pointingTo());
+        result.insert(others.begin(), others.end());
+    }
+    return Set::create(result, "aggregates");
+}   
+
+// Graph
+
+Graph::Graph(const std::string& label)
+: Set(label)
+{
+    Device::Superclass()->memberOf(this);
+    Interface::Superclass()->memberOf(this);
+    Bus::Superclass()->memberOf(this);
+}
+
+Set* Graph::devices()
+{
+    Relation *superOf = Device::Superclass()->superclassOf();
+    Set *result = Set::create(Set::promote(superOf->pointingTo()), "Devices");
+    delete superOf;
+    return result;
+}
+
+Set* Graph::interfaces()
+{
+    Relation *superOf = Interface::Superclass()->superclassOf();
+    Set *result = Set::create(Set::promote(superOf->pointingTo()), "Interfaces");
+    delete superOf;
+    return result;
+}
+
+Set* Graph::busses()
+{
+    Relation *superOf = Bus::Superclass()->superclassOf();
+    Set *result = Set::create(Set::promote(superOf->pointingTo()), "Busses");
+    delete superOf;
+    return result;
+}
+
+Device* Graph::createDevice(const std::string& name)
+{
+    Set *newbie = Set::create(name);
+    newbie->isA(Device::Superclass());
+    return static_cast<Device*>(newbie);
+}
+
+Interface* Graph::createInterface(const std::string& name)
+{
+    Set *newbie = Set::create(name);
+    newbie->isA(Interface::Superclass());
+    return static_cast<Interface*>(newbie);
+}
+
+Bus* Graph::createBus(const std::string& name)
+{
+    Set *newbie = Set::create(name);
+    newbie->isA(Bus::Superclass());
+    return static_cast<Bus*>(newbie);
+}
+
+bool Graph::has(Set* device, Set* interface)
+{
+    return static_cast<Device*>(device)->has(interface);
+}
+
+bool Graph::has(Set* device, Set::Sets interfaces)
+{
+    return static_cast<Device*>(device)->has(interfaces);
+}
+
+bool Graph::has(Set::Sets devices, Set* interface)
+{
+    bool result = true;
+
+    // N-1 relation based on 2-hyperedges
+    for (auto deviceIt : devices)
+    {
+        auto device = static_cast<Device*>(deviceIt.second);
+        result &= device->has(interface);
+    }
+    return result;
+}
+
+bool Graph::has(Set::Sets devices, Set::Sets interfaces)
+{
+    bool result = true;
+    // N-M relation based on N * (1-M) relations
+    for (auto deviceIt : devices)
+    {
+        auto device = static_cast<Device*>(deviceIt.second);
+        result &= device->has(interfaces);
+    }
+    return result;
+}
+
+bool Graph::connects(Set* bus, Set* interface)
+{
+    return static_cast<Bus*>(bus)->connects(interface);
+}
+
+bool Graph::connects(Set* bus, Set::Sets interfaces)
+{
+    return static_cast<Bus*>(bus)->connects(interfaces);
 }
 
 bool Graph::connects(Set::Sets busses, Set* interface)
 {
+    bool result = true;
     // N-1 relation based on 2-hyperedges (1-1 relations)
     for (auto busIt : busses)
     {
-        auto bus = busIt.second;
-        connects(bus, interface);
+        auto bus = static_cast<Bus*>(busIt.second);
+        result &= bus->connects(interface);
     }
-    return true;
+    return result;
 }
 
 bool Graph::connects(Set::Sets busses, Set::Sets interfaces)
 {
+    bool result = true;
     // N-M relation based on N * (1-M) relations
     for (auto busIt : busses)
     {
-        auto bus = busIt.second;
-        connects(bus, interfaces);
+        auto bus = static_cast<Bus*>(busIt.second);
+        result &= bus->connects(interfaces);
     }
-    return true;
+    return result;
 }
 
 }
