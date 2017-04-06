@@ -70,9 +70,9 @@ int main(void)
     std::cout << Hyperedge::serialize(subQuery) << std::endl;
     Set *intersection = superQuerySet->intersect(subQuerySet);
     std::cout << intersection << " = { ";
-    for (auto memberIt : intersection->members())
+    for (auto memberId : intersection->members())
     {
-        std::cout << memberIt.second << ", ";
+        std::cout << memberId << ", ";
     }
     std::cout << "}\n";
 
@@ -105,9 +105,9 @@ int main(void)
     hwgraph.connects(bus, usb2);
 
     auto pred = pcb->predecessors();
-    for (auto predIt : pred->pointingTo())
+    for (auto predId : pred->pointingTo())
     {
-        std::cout << predIt.second << std::endl;
+        std::cout << Hyperedge::find(predId) << std::endl;
     }
     delete pred;
 

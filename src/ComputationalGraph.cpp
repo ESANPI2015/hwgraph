@@ -58,7 +58,7 @@ bool Bus::connects(Set* interface)
     Relation *connects = NULL;
     if (edges.size())
     {
-        connects = static_cast< Relation *>(edges.begin()->second);
+        connects = static_cast< Relation* >(Hyperedge::find(*edges.begin()));
         result &= connects->to(interface);
     } else {
         // Finally we create a new relation (1-to-1)
@@ -75,9 +75,9 @@ bool Bus::connects(Set::Sets interfaces)
     bool result = true;
 
     // 1-N relation based on 2-hyperedges (1-1 relations)
-    for (auto interfaceIt : interfaces)
+    for (auto interfaceId : interfaces)
     {
-        auto interface = interfaceIt.second;
+        auto interface = Set::promote(Hyperedge::find(interfaceId));
         result &= connects(interface);
     }
 
@@ -117,7 +117,7 @@ bool Device::has(Set* interface)
     Relation *has = NULL;
     if (edges.size())
     {
-        has = static_cast< Relation *>(edges.begin()->second);
+        has = static_cast< Relation* >(Hyperedge::find(*edges.begin()));
         result &= has->to(interface);
     } else {
         // Finally we create a new relation (1-to-1)
@@ -133,9 +133,9 @@ bool Device::has(Set::Sets interfaces)
 {
     bool result = true;
     // 1-N relation based on 2-hyperedges (1-1 relations)
-    for (auto interfaceIt : interfaces)
+    for (auto interfaceId : interfaces)
     {
-        auto interface = interfaceIt.second;
+        auto interface = Set::promote(Hyperedge::find(interfaceId));
         result &= has(interface);
     }
     return result;
@@ -145,9 +145,9 @@ Set* Device::aggregates()
 {
     Set::Sets result;
     Hyperedge::Hyperedges hasRels = pointingTo("has");
-    for (auto relIt : hasRels)
+    for (auto relId : hasRels)
     {
-        auto others = Set::promote(relIt.second->pointingTo());
+        auto others = Set::promote(Hyperedge::find(relId)->pointingTo());
         result.insert(others.begin(), others.end());
     }
     return Set::create(result, "aggregates");
@@ -223,9 +223,9 @@ bool Graph::has(Set::Sets devices, Set* interface)
     bool result = true;
 
     // N-1 relation based on 2-hyperedges
-    for (auto deviceIt : devices)
+    for (auto deviceId : devices)
     {
-        auto device = static_cast<Device*>(deviceIt.second);
+        auto device = static_cast<Device*>(Hyperedge::find(deviceId));
         result &= device->has(interface);
     }
     return result;
@@ -235,9 +235,9 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
 {
     bool result = true;
     // N-M relation based on N * (1-M) relations
-    for (auto deviceIt : devices)
+    for (auto deviceId : devices)
     {
-        auto device = static_cast<Device*>(deviceIt.second);
+        auto device = static_cast<Device*>(Hyperedge::find(deviceId));
         result &= device->has(interfaces);
     }
     return result;
@@ -257,9 +257,9 @@ bool Graph::connects(Set::Sets busses, Set* interface)
 {
     bool result = true;
     // N-1 relation based on 2-hyperedges (1-1 relations)
-    for (auto busIt : busses)
+    for (auto busId : busses)
     {
-        auto bus = static_cast<Bus*>(busIt.second);
+        auto bus = static_cast<Bus*>(Hyperedge::find(busId));
         result &= bus->connects(interface);
     }
     return result;
@@ -269,9 +269,9 @@ bool Graph::connects(Set::Sets busses, Set::Sets interfaces)
 {
     bool result = true;
     // N-M relation based on N * (1-M) relations
-    for (auto busIt : busses)
+    for (auto busId : busses)
     {
-        auto bus = static_cast<Bus*>(busIt.second);
+        auto bus = static_cast<Bus*>(Hyperedge::find(busId));
         result &= bus->connects(interfaces);
     }
     return result;

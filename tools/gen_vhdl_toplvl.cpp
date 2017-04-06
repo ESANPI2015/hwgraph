@@ -23,9 +23,9 @@ int main(void)
     // Find specific device(s) in the set of all devices
     auto devices = hwgraph.devices()->members("TestDevice");
     // For each of these devices
-    for (auto deviceIt : devices)
+    for (auto deviceId : devices)
     {
-        auto device = static_cast<Hardware::Computational::Device*>(deviceIt.second);
+        auto device = static_cast<Hardware::Computational::Device*>(Hyperedge::find(deviceId));
         // Produce VHDL skeleton
         std::cout << "-- CHWG to VHDL TOPLVL Generator --\n";
         std::cout << "-- libraries here --\n";
@@ -39,9 +39,9 @@ int main(void)
         auto interfaces = hwgraph.interfaces();
         // My interfaces: Intersection of ALL interfaces with the aggregates of the device
         auto myinterfaces = aggregates->intersect(interfaces);
-        for (auto interfaceIt : myinterfaces->members())
+        for (auto interfaceId : myinterfaces->members())
         {
-            auto interface = interfaceIt.second;
+            auto interface = Hyperedge::find(interfaceId);
             std::cout << "-- Interface: " << interface->label() << std::endl;
             std::cout << "-- TODO: How do we know what pins/groups and directions we have to assign here?\n";
         }
