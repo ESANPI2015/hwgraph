@@ -28,7 +28,7 @@ pkg_check_modules(hwgraph_PKGCONFIG REQUIRED
 include_directories(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
 #message(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
 link_directories(${hwgraph_PKGCONFIG_LIBRARY_DIRS})
-add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -Werror -std=c++11)
+add_definitions(${hwgraph_PKGCONFIG_CFLAGS_OTHER} -ggdb --pedantic -Wall -std=c++11)
 
 set(SOURCES
     src/ComputationalGraph.cpp

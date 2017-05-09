@@ -1,5 +1,7 @@
 #include "ComputationalGraph.hpp"
+#include "HyperedgeYAML.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <cassert>
 
@@ -111,8 +113,18 @@ int main(void)
     }
     delete pred;
 
-    // TODO NEXT:
     // import/export
+    std::cout << "> Store everything to YAML file\n";
+    std::ofstream fout;
+    fout.open("test.yml");
+    if(fout.good()) {
+        fout << YAML::store(&hwgraph);
+    } else {
+        std::cout << "FAILED\n";
+    }
+    fout.close();
+
+    // TODO NEXT:
     // constraints/rules
 
     std::cout << "*** Final state ***" << std::endl;
