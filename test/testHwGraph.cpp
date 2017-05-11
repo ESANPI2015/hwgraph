@@ -118,7 +118,7 @@ int main(void)
     std::ofstream fout;
     fout.open("test.yml");
     if(fout.good()) {
-        fout << YAML::store(&hwgraph);
+        fout << YAML::store(hwgraph.labelContains()->pointingTo());
     } else {
         std::cout << "FAILED\n";
     }
