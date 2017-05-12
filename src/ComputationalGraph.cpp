@@ -58,7 +58,7 @@ bool Bus::connects(Set* interface)
     Relation *connects = NULL;
     if (edges.size())
     {
-        connects = static_cast< Relation* >(Hyperedge::find(*edges.begin()));
+        connects = Relation::promote(Hyperedge::find(*edges.begin()));
         result &= connects->to(interface);
     } else {
         // Finally we create a new relation (1-to-1)
@@ -117,7 +117,7 @@ bool Device::has(Set* interface)
     Relation *has = NULL;
     if (edges.size())
     {
-        has = static_cast< Relation* >(Hyperedge::find(*edges.begin()));
+        has = Relation::promote(Hyperedge::find(*edges.begin()));
         result &= has->to(interface);
     } else {
         // Finally we create a new relation (1-to-1)
