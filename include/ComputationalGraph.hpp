@@ -26,26 +26,25 @@ namespace Computational {
 class Interface : public Set
 {
     public:
-        // Constructors
-        Interface(const std::string& label="Interface");
-
         // Gives a ptr to the interface superclass
         static Set* Superclass();
         
         // Promotes a Set to be an Interface
         // This means that it will get an isA relation to the interface superclass!!!
-        //static Interface* promote(Set *set);
+        static Interface* promote(Set *set);
 
     private:
+        // Private Constructors
+        Interface(const std::string& label="Interface");
+        Interface(const Interface&);
+        Interface& operator=(const Interface&);
+
         static Set* superclass;
 };
 
 class Bus : public Set
 {
     public:
-        // Constructors
-        Bus(const std::string& label="Bus");
-
         // Interfaces & Busses
         bool connects(Set* interface);
         bool connects(Set::Sets interfaces);
@@ -54,18 +53,20 @@ class Bus : public Set
         static Set* Superclass();
 
         // Promotes a Set to be a Bus
-        //static Bus* promote(Set *set);
+        static Bus* promote(Set *set);
 
     private:
+        // Constructors
+        Bus(const std::string& label="Bus");
+        Bus(const Bus&);
+        Bus& operator=(const Bus&);
+
         static Set* superclass;
 };
 
 class Device : public Set
 {
     public:
-        // Constructors
-        Device(const std::string& label="Device");
-
         // Devices & Interfaces
         bool has(Set* interface);
         bool has(Set::Sets interfaces);
@@ -78,19 +79,22 @@ class Device : public Set
         static Set* Superclass();
 
         // Promotes a Set to be a Device
-        //static Bus* promote(Set *set);
+        static Device* promote(Set *set);
 
     private:
+        // Constructors
+        Device(const std::string& label="Device");
+        Device(const Device&);
+        Device& operator=(const Device&);
+
         static Set* superclass;
 };
 
 class Graph : public Set
 {
     public:
-        // Constructor which creates a Set and all standard subsets
-        Graph(const std::string& label="Computational Hardware");
-
         // Factory functions
+        static Graph* create(const std::string& label="Computational Hardware");
         Device* createDevice(const std::string& name="Device");
         Interface* createInterface(const std::string& name="Interface");
         Bus* createBus(const std::string& name="Bus");
@@ -112,6 +116,12 @@ class Graph : public Set
         bool connects(Set *bus, Set::Sets interfaces);
         bool connects(Set::Sets busses, Set *interface);
         bool connects(Set::Sets busses, Set::Sets interfaces);
+    private:
+        // Constructor which creates a Set and all standard subsets
+        Graph(const std::string& label="Computational Hardware");
+        Graph(const Graph&);
+        Graph& operator=(const Graph&);
+
 };
 
 }

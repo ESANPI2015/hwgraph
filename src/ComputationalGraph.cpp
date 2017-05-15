@@ -7,13 +7,6 @@ namespace Computational {
 
 Set* Interface::superclass = NULL;
 
-Interface::Interface(const std::string& label)
-: Set(label)
-{
-    // Create isA relation to the superclass
-    this->isA(Interface::Superclass());
-}
-
 Set* Interface::Superclass()
 {
     if (!Interface::superclass)
@@ -23,15 +16,23 @@ Set* Interface::Superclass()
     return Interface::superclass;
 }
 
+Interface* Interface::promote(Set *base)
+{
+    // Create isA relation to the superclass
+    base->isA(Interface::Superclass());
+    return static_cast<Interface*>(base);
+}
+
+
 // Bus
 
 Set* Bus::superclass = NULL;
 
-Bus::Bus(const std::string& label)
-: Set(label)
+Bus* Bus::promote(Set *base)
 {
     // Create isA relation to the superclass
-    this->isA(superclass);
+    base->isA(Bus::Superclass());
+    return static_cast<Bus*>(base);
 }
 
 Set* Bus::Superclass()
@@ -87,11 +88,11 @@ bool Bus::connects(Set::Sets interfaces)
 // Device
 Set* Device::superclass = NULL;
 
-Device::Device(const std::string& label)
-: Set(label)
+Device* Device::promote(Set *base)
 {
     // Create isA relation to the superclass
-    this->isA(superclass);
+    base->isA(Device::Superclass());
+    return static_cast<Device*>(base);
 }
 
 Set* Device::Superclass()
@@ -155,12 +156,13 @@ Set* Device::aggregates()
 
 // Graph
 
-Graph::Graph(const std::string& label)
-: Set(label)
+Graph* Graph::create(const std::string& label)
 {
-    Device::Superclass()->memberOf(this);
-    Interface::Superclass()->memberOf(this);
-    Bus::Superclass()->memberOf(this);
+    Graph *neu = static_cast<Graph*>(Set::create(label));
+    Device::Superclass()->memberOf(neu);
+    Interface::Superclass()->memberOf(neu);
+    Bus::Superclass()->memberOf(neu);
+    return neu;
 }
 
 Set* Graph::devices()
@@ -190,32 +192,29 @@ Set* Graph::busses()
 Device* Graph::createDevice(const std::string& name)
 {
     Set *newbie = Set::create(name);
-    newbie->isA(Device::Superclass());
-    return static_cast<Device*>(newbie);
+    return Device::promote(newbie);
 }
 
 Interface* Graph::createInterface(const std::string& name)
 {
-    Set *newbie = Set::create(name);
-    newbie->isA(Interface::Superclass());
-    return static_cast<Interface*>(newbie);
+    Set *neu = Set::create(name);
+    return Interface::promote(neu);
 }
 
 Bus* Graph::createBus(const std::string& name)
 {
     Set *newbie = Set::create(name);
-    newbie->isA(Bus::Superclass());
-    return static_cast<Bus*>(newbie);
+    return Bus::promote(newbie);
 }
 
 bool Graph::has(Set* device, Set* interface)
 {
-    return static_cast<Device*>(device)->has(interface);
+    return Device::promote(device)->has(interface);
 }
 
 bool Graph::has(Set* device, Set::Sets interfaces)
 {
-    return static_cast<Device*>(device)->has(interfaces);
+    return Device::promote(device)->has(interfaces);
 }
 
 bool Graph::has(Set::Sets devices, Set* interface)
@@ -225,7 +224,7 @@ bool Graph::has(Set::Sets devices, Set* interface)
     // N-1 relation based on 2-hyperedges
     for (auto deviceId : devices)
     {
-        auto device = static_cast<Device*>(Hyperedge::find(deviceId));
+        auto device = Device::promote(Set::promote(Hyperedge::find(deviceId)));
         result &= device->has(interface);
     }
     return result;
@@ -237,7 +236,7 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
     // N-M relation based on N * (1-M) relations
     for (auto deviceId : devices)
     {
-        auto device = static_cast<Device*>(Hyperedge::find(deviceId));
+        auto device = Device::promote(Set::promote(Hyperedge::find(deviceId)));
         result &= device->has(interfaces);
     }
     return result;
@@ -245,12 +244,12 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
 
 bool Graph::connects(Set* bus, Set* interface)
 {
-    return static_cast<Bus*>(bus)->connects(interface);
+    return Bus::promote(bus)->connects(interface);
 }
 
 bool Graph::connects(Set* bus, Set::Sets interfaces)
 {
-    return static_cast<Bus*>(bus)->connects(interfaces);
+    return Bus::promote(bus)->connects(interfaces);
 }
 
 bool Graph::connects(Set::Sets busses, Set* interface)
@@ -259,7 +258,7 @@ bool Graph::connects(Set::Sets busses, Set* interface)
     // N-1 relation based on 2-hyperedges (1-1 relations)
     for (auto busId : busses)
     {
-        auto bus = static_cast<Bus*>(Hyperedge::find(busId));
+        auto bus = Bus::promote(Set::promote(Hyperedge::find(busId)));
         result &= bus->connects(interface);
     }
     return result;
@@ -271,7 +270,7 @@ bool Graph::connects(Set::Sets busses, Set::Sets interfaces)
     // N-M relation based on N * (1-M) relations
     for (auto busId : busses)
     {
-        auto bus = static_cast<Bus*>(Hyperedge::find(busId));
+        auto bus = Bus::promote(Set::promote(Hyperedge::find(busId)));
         result &= bus->connects(interfaces);
     }
     return result;

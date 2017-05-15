@@ -5,23 +5,23 @@
 
 int main(void)
 {
-    Hardware::Computational::Graph hwgraph;
+    Hardware::Computational::Graph* hwgraph = Hardware::Computational::Graph::create();
 
     // TODO:
     // * Import hardware spec
     // * Search for all devices
     // * Create a toplvl vhdl skeleton for each device
 
-    auto dev = hwgraph.createDevice("TestDevice");
-    hwgraph.has(dev, hwgraph.createInterface("Ethernet"));
-    hwgraph.has(dev, hwgraph.createInterface("RS232"));
-    hwgraph.has(dev, hwgraph.createInterface("LVDS"));
-    hwgraph.has(hwgraph.createDevice("dummy"),hwgraph.createInterface("dummy"));
+    auto dev = hwgraph->createDevice("TestDevice");
+    hwgraph->has(dev, hwgraph->createInterface("Ethernet"));
+    hwgraph->has(dev, hwgraph->createInterface("RS232"));
+    hwgraph->has(dev, hwgraph->createInterface("LVDS"));
+    hwgraph->has(hwgraph->createDevice("dummy"),hwgraph->createInterface("dummy"));
 
     //std::cout << Hyperedge::serialize(&hwgraph);
 
     // Find specific device(s) in the set of all devices
-    auto devices = hwgraph.devices()->members("TestDevice");
+    auto devices = hwgraph->devices()->members("TestDevice");
     // For each of these devices
     for (auto deviceId : devices)
     {
@@ -36,7 +36,7 @@ int main(void)
         // Get all things related to the device by a "has" relation
         auto aggregates = device->aggregates();
         // Get all interfaces
-        auto interfaces = hwgraph.interfaces();
+        auto interfaces = hwgraph->interfaces();
         // My interfaces: Intersection of ALL interfaces with the aggregates of the device
         auto myinterfaces = aggregates->intersect(interfaces);
         for (auto interfaceId : myinterfaces->members())
