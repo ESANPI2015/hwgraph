@@ -5,43 +5,36 @@ namespace Computational {
 
 // Interface
 
-Set* Interface::superclass = NULL;
+const std::string Interface::classLabel = "HardwareInterface";
+unsigned Interface::lastSuperclassId = 0;
 
 Set* Interface::Superclass()
 {
-    if (!Interface::superclass)
+    Hyperedge *edge;
+    if (!Interface::lastSuperclassId || !(edge = Hyperedge::find(Interface::lastSuperclassId)))
     {
-        Interface::superclass = Set::create("Interface");
+        // First call or previous superclass has been destroyed
+        edge = Set::create(Interface::classLabel);
+        lastSuperclassId = edge->id();
     }
-    return Interface::superclass;
+    return static_cast<Set*>(edge);
 }
-
-Interface* Interface::promote(Set *base)
-{
-    // Create isA relation to the superclass
-    base->isA(Interface::Superclass());
-    return static_cast<Interface*>(base);
-}
-
 
 // Bus
 
-Set* Bus::superclass = NULL;
-
-Bus* Bus::promote(Set *base)
-{
-    // Create isA relation to the superclass
-    base->isA(Bus::Superclass());
-    return static_cast<Bus*>(base);
-}
+const std::string Bus::classLabel = "Bus";
+unsigned Bus::lastSuperclassId = 0;
 
 Set* Bus::Superclass()
 {
-    if (!Bus::superclass)
+    Hyperedge *edge;
+    if (!Bus::lastSuperclassId || !(edge = Hyperedge::find(Bus::lastSuperclassId)))
     {
-        Bus::superclass = Set::create("Bus");
+        // First call or previous superclass has been destroyed
+        edge = Set::create(Bus::classLabel);
+        Bus::lastSuperclassId = edge->id();
     }
-    return Bus::superclass;
+    return static_cast<Set*>(edge);
 }
 
 // Interfaces & Busses
@@ -55,6 +48,7 @@ bool Bus::connects(Set* interface)
     result &= interface->isA(Interface::Superclass());
 
     // Find a connects relation in device
+    // TODO: These relations should also be registered by static relation class labels!!
     auto edges = pointingTo("connects");
     Relation *connects = NULL;
     if (edges.size())
@@ -86,22 +80,19 @@ bool Bus::connects(Set::Sets interfaces)
 }
 
 // Device
-Set* Device::superclass = NULL;
-
-Device* Device::promote(Set *base)
-{
-    // Create isA relation to the superclass
-    base->isA(Device::Superclass());
-    return static_cast<Device*>(base);
-}
+const std::string Device::classLabel = "Device";
+unsigned Device::lastSuperclassId = 0;
 
 Set* Device::Superclass()
 {
-    if (!Device::superclass)
+    Hyperedge *edge;
+    if (!Device::lastSuperclassId || !(edge = Hyperedge::find(Device::lastSuperclassId)))
     {
-        Device::superclass = Set::create("Device");
+        // First call or previous superclass has been destroyed
+        edge = Set::create(Device::classLabel);
+        Device::lastSuperclassId = edge->id();
     }
-    return Device::superclass;
+    return static_cast<Set*>(edge);
 }
 
 // Devices & Interfaces
@@ -191,30 +182,27 @@ Set* Graph::busses()
 
 Device* Graph::createDevice(const std::string& name)
 {
-    Set *newbie = Set::create(name);
-    return Device::promote(newbie);
+    return Set::create<Device>(name);
 }
 
 Interface* Graph::createInterface(const std::string& name)
 {
-    Set *neu = Set::create(name);
-    return Interface::promote(neu);
+    return Set::create<Interface>(name);
 }
 
 Bus* Graph::createBus(const std::string& name)
 {
-    Set *newbie = Set::create(name);
-    return Bus::promote(newbie);
+    return Set::create<Bus>(name);
 }
 
 bool Graph::has(Set* device, Set* interface)
 {
-    return Device::promote(device)->has(interface);
+    return device->promote<Device>()->has(interface);
 }
 
 bool Graph::has(Set* device, Set::Sets interfaces)
 {
-    return Device::promote(device)->has(interfaces);
+    return device->promote<Device>()->has(interfaces);
 }
 
 bool Graph::has(Set::Sets devices, Set* interface)
@@ -224,7 +212,7 @@ bool Graph::has(Set::Sets devices, Set* interface)
     // N-1 relation based on 2-hyperedges
     for (auto deviceId : devices)
     {
-        auto device = Device::promote(Set::promote(Hyperedge::find(deviceId)));
+        auto device = Set::promote(Hyperedge::find(deviceId))->promote<Device>();
         result &= device->has(interface);
     }
     return result;
@@ -236,7 +224,7 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
     // N-M relation based on N * (1-M) relations
     for (auto deviceId : devices)
     {
-        auto device = Device::promote(Set::promote(Hyperedge::find(deviceId)));
+        auto device = Set::promote(Hyperedge::find(deviceId))->promote<Device>();
         result &= device->has(interfaces);
     }
     return result;
@@ -244,12 +232,12 @@ bool Graph::has(Set::Sets devices, Set::Sets interfaces)
 
 bool Graph::connects(Set* bus, Set* interface)
 {
-    return Bus::promote(bus)->connects(interface);
+    return bus->promote<Bus>()->connects(interface);
 }
 
 bool Graph::connects(Set* bus, Set::Sets interfaces)
 {
-    return Bus::promote(bus)->connects(interfaces);
+    return bus->promote<Bus>()->connects(interfaces);
 }
 
 bool Graph::connects(Set::Sets busses, Set* interface)
@@ -258,7 +246,7 @@ bool Graph::connects(Set::Sets busses, Set* interface)
     // N-1 relation based on 2-hyperedges (1-1 relations)
     for (auto busId : busses)
     {
-        auto bus = Bus::promote(Set::promote(Hyperedge::find(busId)));
+        auto bus = Set::promote(Hyperedge::find(busId))->promote<Bus>();
         result &= bus->connects(interface);
     }
     return result;
@@ -270,7 +258,7 @@ bool Graph::connects(Set::Sets busses, Set::Sets interfaces)
     // N-M relation based on N * (1-M) relations
     for (auto busId : busses)
     {
-        auto bus = Bus::promote(Set::promote(Hyperedge::find(busId)));
+        auto bus = Set::promote(Hyperedge::find(busId))->promote<Bus>();
         result &= bus->connects(interfaces);
     }
     return result;

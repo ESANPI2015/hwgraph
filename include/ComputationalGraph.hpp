@@ -29,17 +29,10 @@ class Interface : public Set
         // Gives a ptr to the interface superclass
         static Set* Superclass();
         
-        // Promotes a Set to be an Interface
-        // This means that it will get an isA relation to the interface superclass!!!
-        static Interface* promote(Set *set);
-
     private:
-        // Private Constructors
-        Interface(const std::string& label="Interface");
-        Interface(const Interface&);
-        Interface& operator=(const Interface&);
-
-        static Set* superclass;
+        // The classLabel is a string representing the class of interfaces
+        static const std::string classLabel;
+        static unsigned lastSuperclassId;
 };
 
 class Bus : public Set
@@ -52,21 +45,18 @@ class Bus : public Set
         // Gives a ptr to the interface superclass
         static Set* Superclass();
 
-        // Promotes a Set to be a Bus
-        static Bus* promote(Set *set);
-
     private:
-        // Constructors
-        Bus(const std::string& label="Bus");
-        Bus(const Bus&);
-        Bus& operator=(const Bus&);
-
-        static Set* superclass;
+        // The classLabel is a string representing the class of interfaces
+        static const std::string classLabel;
+        static unsigned lastSuperclassId;
 };
 
 class Device : public Set
 {
     public:
+        // Gives a ptr to the interface superclass
+        static Set* Superclass();
+
         // Devices & Interfaces
         bool has(Set* interface);
         bool has(Set::Sets interfaces);
@@ -75,19 +65,10 @@ class Device : public Set
         // Returns a set containing all things which are related to us by a "has" relation
         Set* aggregates();
 
-        // Gives a ptr to the interface superclass
-        static Set* Superclass();
-
-        // Promotes a Set to be a Device
-        static Device* promote(Set *set);
-
     private:
-        // Constructors
-        Device(const std::string& label="Device");
-        Device(const Device&);
-        Device& operator=(const Device&);
-
-        static Set* superclass;
+        // The classLabel is a string representing the class of interfaces
+        static const std::string classLabel;
+        static unsigned lastSuperclassId;
 };
 
 class Graph : public Set
@@ -116,11 +97,6 @@ class Graph : public Set
         bool connects(Set *bus, Set::Sets interfaces);
         bool connects(Set::Sets busses, Set *interface);
         bool connects(Set::Sets busses, Set::Sets interfaces);
-    private:
-        // Constructor which creates a Set and all standard subsets
-        Graph(const std::string& label="Computational Hardware");
-        Graph(const Graph&);
-        Graph& operator=(const Graph&);
 
 };
 

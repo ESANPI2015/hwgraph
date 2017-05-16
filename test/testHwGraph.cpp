@@ -62,7 +62,7 @@ int main(void)
     std::cout << Hyperedge::serialize(hwgraph) << std::endl;
 
     std::cout << "*** Get all supertypes of x86 ***" << std::endl;
-    Relation *superQuery = x86->kindOf();
+    Relation *superQuery = x86->isA();
     std::cout << Hyperedge::serialize(superQuery) << std::endl;
     std::cout << "** Cycle detection in Hierarchy ***" << std::endl;
     Relation *subQuery = x86->superclassOf();
