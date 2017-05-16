@@ -1,4 +1,5 @@
 #include "ComputationalGraph.hpp"
+#include "HyperedgeYAML.hpp"
 
 #include <iostream>
 #include <cassert>
@@ -12,16 +13,11 @@ int main(void)
     // * Search for all devices
     // * Create a toplvl vhdl skeleton for each device
 
-    auto dev = hwgraph->createDevice("TestDevice");
-    hwgraph->has(dev, hwgraph->createInterface("Ethernet"));
-    hwgraph->has(dev, hwgraph->createInterface("RS232"));
-    hwgraph->has(dev, hwgraph->createInterface("LVDS"));
-    hwgraph->has(hwgraph->createDevice("dummy"),hwgraph->createInterface("dummy"));
-
-    //std::cout << Hyperedge::serialize(&hwgraph);
-
+    // Test case:
+    auto newEdges = YAML::load(YAML::LoadFile("test.yml"));
     // Find specific device(s) in the set of all devices
-    auto devices = hwgraph->devices()->members("TestDevice");
+    auto devices = hwgraph->devices()->members();
+
     // For each of these devices
     for (auto deviceId : devices)
     {
