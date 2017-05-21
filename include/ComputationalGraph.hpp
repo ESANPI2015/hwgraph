@@ -1,6 +1,7 @@
 #ifndef _HW_COMPUTATIONAL_GRAPH_HPP
 #define _HW_COMPUTATIONAL_GRAPH_HPP
 
+#include "SetSystem.hpp"
 #include "Set.hpp"
 #include "Relation.hpp"
 
@@ -17,87 +18,84 @@ namespace Computational {
     * Does it makes sense to use (N*1-1) and (N*1-M) versions of the N-1,N-M relations?
     * Would it be better to just use SIMPLE 2-hyperedges for the relations (everything based on 1-1 relations)?
       NOTE: This would better fit to databases with fixed tables like ID -> (ID, ID)
-    * How are the constraints on AGGREGATION (has)? Or, can an interface be owned by only one device?
-    * Subclassing versus Subgraphs: Specify this. How do we handle devices containing other devices?
-      -> SEE SUBSUMPTION AND COMPOSITION RELATIONS
-    * Should we introduce intermediate concepts like Ownership(has) or others which are shared amongst other domains?
+    * How to we encode and enforce constraints on relations?
+    * 
+
+    The underlying concept is a system of sets linked by relations
 */
+
+class Graph;
 
 class Interface : public Set
 {
     public:
-        // Gives a ptr to the interface superclass
-        static Set* Superclass();
-        
-    private:
-        // The classLabel is a string representing the class of interfaces
-        static const std::string classLabel;
-        static unsigned lastSuperclassId;
+        /* Constructor */
+        Interface(const unsigned id, const std::string& label="")
+        : Set(id,label)
+        {}
+
+        // This is holding a label to identify instances of this class via (* -- isA --> superclassLabel) patterns
+        static const std::string superclassLabel;
 };
 
 class Bus : public Set
 {
     public:
+        /* Constructor */
+        Bus(const unsigned id, const std::string& label="")
+        : Set(id,label)
+        {}
+
+        // This is holding a label to identify instances of this class via (* -- isA --> superclassLabel) patterns
+        static const std::string superclassLabel;
+
         // Interfaces & Busses
-        bool connects(Set* interface);
-        bool connects(Set::Sets interfaces);
-
-        // Gives a ptr to the interface superclass
-        static Set* Superclass();
-
-    private:
-        // The classLabel is a string representing the class of interfaces
-        static const std::string classLabel;
-        static unsigned lastSuperclassId;
+        bool connects(Graph* graph, const unsigned id);
 };
 
 class Device : public Set
 {
     public:
-        // Gives a ptr to the interface superclass
-        static Set* Superclass();
+        /* Constructor */
+        Device(const unsigned id, const std::string& label="")
+        : Set(id,label)
+        {}
+
+        // This is holding a label to identify instances of this class via (* -- isA --> superclassLabel) patterns
+        static const std::string superclassLabel;
 
         // Devices & Interfaces
-        bool has(Set* interface);
-        bool has(Set::Sets interfaces);
-
-        // Queries:
-        // Returns a set containing all things which are related to us by a "has" relation
-        Set* aggregates();
-
-    private:
-        // The classLabel is a string representing the class of interfaces
-        static const std::string classLabel;
-        static unsigned lastSuperclassId;
+        bool has(Graph* graph, const unsigned id);
 };
 
-class Graph : public Set
+class Graph : public SetSystem
 {
     public:
+        // Constructor/Destructor
+        Graph();
+        ~Graph();
+
+        // Returns the id of an representative of the classes
+        unsigned deviceClass();
+        unsigned interfaceClass();
+        unsigned busClass();
+
         // Factory functions
-        static Graph* create(const std::string& label="Computational Hardware");
-        Device* createDevice(const std::string& name="Device");
-        Interface* createInterface(const std::string& name="Interface");
-        Bus* createBus(const std::string& name="Bus");
+        unsigned createDevice(const std::string& name="Device");
+        unsigned createInterface(const std::string& name="Interface");
+        unsigned createBus(const std::string& name="Bus");
 
         // Queries
         // NOTE: Return true sets whose members are kinds of the superclasses
-        Set* devices();
-        Set* interfaces();
-        Set* busses();
+        unsigned devices();
+        unsigned interfaces();
+        unsigned busses();
 
         // Global functions for devices & interfaces
-        bool has(Set *device, Set *interface);
-        bool has(Set *device, Set::Sets interfaces);
-        bool has(Set::Sets devices, Set *interface);
-        bool has(Set::Sets devices, Set::Sets interfaces);
+        unsigned has(const unsigned deviceId, const unsigned interfaceId);
 
         // Global functions for busses & interfaces
-        bool connects(Set *bus, Set *interface);
-        bool connects(Set *bus, Set::Sets interfaces);
-        bool connects(Set::Sets busses, Set *interface);
-        bool connects(Set::Sets busses, Set::Sets interfaces);
-
+        unsigned connects(const unsigned busId, const unsigned interfaceId);
 };
 
 }

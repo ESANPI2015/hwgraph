@@ -5,263 +5,146 @@ namespace Computational {
 
 // Interface
 
-const std::string Interface::classLabel = "HardwareInterface";
-unsigned Interface::lastSuperclassId = 0;
-
-Set* Interface::Superclass()
-{
-    Hyperedge *edge;
-    if (!Interface::lastSuperclassId || !(edge = Hyperedge::find(Interface::lastSuperclassId)))
-    {
-        // First call or previous superclass has been destroyed
-        edge = Set::create(Interface::classLabel);
-        lastSuperclassId = edge->id();
-    }
-    return static_cast<Set*>(edge);
-}
+const std::string Interface::superclassLabel = "HardwareInterface";
 
 // Bus
 
-const std::string Bus::classLabel = "Bus";
-unsigned Bus::lastSuperclassId = 0;
-
-Set* Bus::Superclass()
-{
-    Hyperedge *edge;
-    if (!Bus::lastSuperclassId || !(edge = Hyperedge::find(Bus::lastSuperclassId)))
-    {
-        // First call or previous superclass has been destroyed
-        edge = Set::create(Bus::classLabel);
-        Bus::lastSuperclassId = edge->id();
-    }
-    return static_cast<Set*>(edge);
-}
+const std::string Bus::superclassLabel = "Bus";
 
 // Interfaces & Busses
-bool Bus::connects(Set* interface)
+bool Bus::connects(Graph* graph, const unsigned id)
 {
-    bool result = true;
-
-    // Make sure, that we are a Bus
-    result &= this->isA(Bus::Superclass());
-    // Make sure, that the set to be used as an interface is derived from interface superclass
-    result &= interface->isA(Interface::Superclass());
-
-    // Find a connects relation in device
-    // TODO: These relations should also be registered by static relation class labels!!
-    auto edges = pointingTo("connects");
-    Relation *connects = NULL;
-    if (edges.size())
-    {
-        connects = Relation::promote(Hyperedge::find(*edges.begin()));
-        result &= connects->to(interface);
-    } else {
-        // Finally we create a new relation (1-to-1)
-        connects = Relation::create("connects");
-        result &= connects->from(this);
-        result &= connects->to(interface);
-    }
-
-    return result;
-}
-
-bool Bus::connects(Set::Sets interfaces)
-{
-    bool result = true;
-
-    // 1-N relation based on 2-hyperedges (1-1 relations)
-    for (auto interfaceId : interfaces)
-    {
-        auto interface = Set::promote(Hyperedge::find(interfaceId));
-        result &= connects(interface);
-    }
-
-    return result;
+    return graph->connects(this->id(), id);
 }
 
 // Device
-const std::string Device::classLabel = "Device";
-unsigned Device::lastSuperclassId = 0;
-
-Set* Device::Superclass()
-{
-    Hyperedge *edge;
-    if (!Device::lastSuperclassId || !(edge = Hyperedge::find(Device::lastSuperclassId)))
-    {
-        // First call or previous superclass has been destroyed
-        edge = Set::create(Device::classLabel);
-        Device::lastSuperclassId = edge->id();
-    }
-    return static_cast<Set*>(edge);
-}
+const std::string Device::superclassLabel = "Device";
 
 // Devices & Interfaces
-bool Device::has(Set* interface)
+bool Device::has(Graph* graph, const unsigned id)
 {
-    bool result = true;
-
-    // At first, we have to add device & interface to the corresponding sets
-    result &= this->isA(Device::Superclass());
-    result &= interface->isA(Interface::Superclass());
-
-    // Find a has relation in device
-    auto edges = pointingTo("has");
-    Relation *has = NULL;
-    if (edges.size())
-    {
-        has = Relation::promote(Hyperedge::find(*edges.begin()));
-        result &= has->to(interface);
-    } else {
-        // Finally we create a new relation (1-to-1)
-        has = Relation::create("has");
-        result &= has->from(this);
-        result &= has->to(interface);
-    }
-
-    return result;
+    return graph->has(this->id(), id);
 }
-
-bool Device::has(Set::Sets interfaces)
-{
-    bool result = true;
-    // 1-N relation based on 2-hyperedges (1-1 relations)
-    for (auto interfaceId : interfaces)
-    {
-        auto interface = Set::promote(Hyperedge::find(interfaceId));
-        result &= has(interface);
-    }
-    return result;
-}
-
-Set* Device::aggregates()
-{
-    Set::Sets result;
-    Hyperedge::Hyperedges hasRels = pointingTo("has");
-    for (auto relId : hasRels)
-    {
-        auto others = Set::promote(Hyperedge::find(relId)->pointingTo());
-        result.insert(others.begin(), others.end());
-    }
-    return Set::create(result, "aggregates");
-}   
 
 // Graph
-
-Graph* Graph::create(const std::string& label)
+Graph::Graph()
 {
-    Graph *neu = static_cast<Graph*>(Set::create(label));
-    Device::Superclass()->memberOf(neu);
-    Interface::Superclass()->memberOf(neu);
-    Bus::Superclass()->memberOf(neu);
-    return neu;
 }
 
-Set* Graph::devices()
+Graph::~Graph()
 {
-    Relation *superOf = Device::Superclass()->superclassOf();
-    Set *result = Set::create(Set::promote(superOf->pointingTo()), "Devices");
-    delete superOf;
-    return result;
 }
 
-Set* Graph::interfaces()
+unsigned Graph::deviceClass()
 {
-    Relation *superOf = Interface::Superclass()->superclassOf();
-    Set *result = Set::create(Set::promote(superOf->pointingTo()), "Interfaces");
-    delete superOf;
-    return result;
+    return getClass(Device::superclassLabel);
 }
 
-Set* Graph::busses()
+unsigned Graph::interfaceClass()
 {
-    Relation *superOf = Bus::Superclass()->superclassOf();
-    Set *result = Set::create(Set::promote(superOf->pointingTo()), "Busses");
-    delete superOf;
-    return result;
+    return getClass(Interface::superclassLabel);
 }
 
-Device* Graph::createDevice(const std::string& name)
+unsigned Graph::busClass()
 {
-    return Set::create<Device>(name);
+    return getClass(Bus::superclassLabel);
 }
 
-Interface* Graph::createInterface(const std::string& name)
+unsigned Graph::devices()
 {
-    return Set::create<Interface>(name);
-}
-
-Bus* Graph::createBus(const std::string& name)
-{
-    return Set::create<Bus>(name);
-}
-
-bool Graph::has(Set* device, Set* interface)
-{
-    return device->promote<Device>()->has(interface);
-}
-
-bool Graph::has(Set* device, Set::Sets interfaces)
-{
-    return device->promote<Device>()->has(interfaces);
-}
-
-bool Graph::has(Set::Sets devices, Set* interface)
-{
-    bool result = true;
-
-    // N-1 relation based on 2-hyperedges
-    for (auto deviceId : devices)
+    // FIXME: This is at least problematic. If we do not make sure, that we only have one representative, then we might produce inconsistent queries here
+    auto superSets = find(Device::superclassLabel);
+    unsigned relId = Hypergraph::create("DUMMY RELATION");
+    for (auto superId : superSets)
     {
-        auto device = Set::promote(Hyperedge::find(deviceId))->promote<Device>();
-        result &= device->has(interface);
+        // For each of the superSets we have to get the instances
+        // and merge the results
+        auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
+        auto nextId  = Hypergraph::unite(relId, otherId);
+        Hypergraph::destroy(relId);
+        relId = nextId;
     }
-    return result;
+    return create(Hypergraph::get(relId)->pointingTo(), "Devices");
 }
 
-bool Graph::has(Set::Sets devices, Set::Sets interfaces)
+unsigned Graph::interfaces()
 {
-    bool result = true;
-    // N-M relation based on N * (1-M) relations
-    for (auto deviceId : devices)
+    // FIXME: This is at least problematic. If we do not make sure, that we only have one representative, then we might produce inconsistent queries here
+    auto superSets = find(Interface::superclassLabel);
+    unsigned relId = Hypergraph::create("DUMMY RELATION");
+    for (auto superId : superSets)
     {
-        auto device = Set::promote(Hyperedge::find(deviceId))->promote<Device>();
-        result &= device->has(interfaces);
+        // For each of the superSets we have to get the instances
+        // and merge the results
+        auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
+        auto nextId  = Hypergraph::unite(relId, otherId);
+        Hypergraph::destroy(relId);
+        relId = nextId;
     }
-    return result;
+    return create(Hypergraph::get(relId)->pointingTo(), "Interfaces");
 }
 
-bool Graph::connects(Set* bus, Set* interface)
+unsigned Graph::busses()
 {
-    return bus->promote<Bus>()->connects(interface);
-}
-
-bool Graph::connects(Set* bus, Set::Sets interfaces)
-{
-    return bus->promote<Bus>()->connects(interfaces);
-}
-
-bool Graph::connects(Set::Sets busses, Set* interface)
-{
-    bool result = true;
-    // N-1 relation based on 2-hyperedges (1-1 relations)
-    for (auto busId : busses)
+    // FIXME: This is at least problematic. If we do not make sure, that we only have one representative, then we might produce inconsistent queries here
+    auto superSets = find(Bus::superclassLabel);
+    unsigned relId = Hypergraph::create("DUMMY RELATION");
+    for (auto superId : superSets)
     {
-        auto bus = Set::promote(Hyperedge::find(busId))->promote<Bus>();
-        result &= bus->connects(interface);
+        // For each of the superSets we have to get the instances
+        // and merge the results
+        auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
+        auto nextId  = Hypergraph::unite(relId, otherId);
+        Hypergraph::destroy(relId);
+        relId = nextId;
     }
-    return result;
+    return create(Hypergraph::get(relId)->pointingTo(), "Busses");
 }
 
-bool Graph::connects(Set::Sets busses, Set::Sets interfaces)
+unsigned Graph::createDevice(const std::string& name)
 {
-    bool result = true;
-    // N-M relation based on N * (1-M) relations
-    for (auto busId : busses)
-    {
-        auto bus = Set::promote(Hyperedge::find(busId))->promote<Bus>();
-        result &= bus->connects(interfaces);
-    }
-    return result;
+    // TODO: Make templated function create<"Device">(name) ? Or at least instantiateFrom("Device", name);
+    auto id = create(name);
+    relateTo(id, deviceClass(), Relation::isALabel);
+    return id;
+}
+
+unsigned Graph::createInterface(const std::string& name)
+{
+    // TODO: Make templated function create<"Device">(name) ? Or at least instantiateFrom("Device", name);
+    auto id = create(name);
+    relateTo(id, interfaceClass(), Relation::isALabel);
+    return id;
+}
+
+unsigned Graph::createBus(const std::string& name)
+{
+    // TODO: Make templated function create<"Device">(name) ? Or at least instantiateFrom("Device", name);
+    auto id = create(name);
+    relateTo(id, busClass(), Relation::isALabel);
+    return id;
+}
+
+unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
+{
+    // Either we
+    // * check if deviceId -- isA --> device
+    // * or, we imply deviceId -- isA --> device
+    // For now, we follow the second approach (although this ALWAYS creates a new relation!!!)
+    relateTo(deviceId, deviceClass(), Relation::isALabel);
+    relateTo(interfaceId, interfaceClass(), Relation::isALabel);
+    return relateTo(deviceId, interfaceId, Relation::hasLabel);
+}
+
+unsigned Graph::connects(unsigned busId, unsigned interfaceId)
+{
+    // Either we
+    // * check if deviceId -- isA --> device
+    // * or, we imply deviceId -- isA --> device
+    // For now, we follow the second approach (although this ALWAYS creates a new relation!!!)
+    relateTo(busId, busClass(), Relation::isALabel);
+    relateTo(interfaceId, interfaceClass(), Relation::isALabel);
+    return relateTo(busId, interfaceId, Relation::connectedToLabel);
 }
 
 }

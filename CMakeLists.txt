@@ -50,10 +50,10 @@ target_link_libraries(testHwGraph hwgraph)
 install(TARGETS testHwGraph
 RUNTIME DESTINATION bin)
 
-add_executable(gen_vhdl_toplvl tools/gen_vhdl_toplvl.cpp)
-target_link_libraries(gen_vhdl_toplvl hwgraph)
-install(TARGETS gen_vhdl_toplvl
-RUNTIME DESTINATION bin)
+#add_executable(gen_vhdl_toplvl tools/gen_vhdl_toplvl.cpp)
+#target_link_libraries(gen_vhdl_toplvl hwgraph)
+#install(TARGETS gen_vhdl_toplvl
+#RUNTIME DESTINATION bin)
 
 # pkg-config, to be installed:
 configure_file(${PROJECT_NAME}.pc.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
