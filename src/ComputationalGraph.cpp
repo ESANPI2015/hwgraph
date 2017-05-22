@@ -62,9 +62,12 @@ unsigned Graph::devices()
         auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
         auto nextId  = Hypergraph::unite(relId, otherId);
         Hypergraph::destroy(relId);
+        //Hypergraph::destroy(otherId);
         relId = nextId;
     }
-    return create(Hypergraph::get(relId)->pointingTo(), "Devices");
+    auto members = Hypergraph::get(relId)->pointingTo();
+    Hypergraph::destroy(relId);
+    return create(members, "Devices");
 }
 
 unsigned Graph::interfaces()
@@ -81,7 +84,9 @@ unsigned Graph::interfaces()
         Hypergraph::destroy(relId);
         relId = nextId;
     }
-    return create(Hypergraph::get(relId)->pointingTo(), "Interfaces");
+    auto members = Hypergraph::get(relId)->pointingTo();
+    Hypergraph::destroy(relId);
+    return create(members, "Interfaces");
 }
 
 unsigned Graph::busses()
@@ -98,7 +103,9 @@ unsigned Graph::busses()
         Hypergraph::destroy(relId);
         relId = nextId;
     }
-    return create(Hypergraph::get(relId)->pointingTo(), "Busses");
+    auto members = Hypergraph::get(relId)->pointingTo();
+    Hypergraph::destroy(relId);
+    return create(members, "Busses");
 }
 
 unsigned Graph::createDevice(const std::string& name)

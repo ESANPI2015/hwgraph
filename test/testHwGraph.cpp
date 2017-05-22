@@ -29,6 +29,43 @@ int main(void)
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
     }
 
+    std::cout << "> Create 2nd device\n";
+    auto thirdId = hwgraph.createDevice("Second device");
+    std::cout << "Third id: " << thirdId << "\n";
+
+    std::cout << "> Create 2nd interface\n";
+    auto fourthId = hwgraph.createInterface("Second interface");
+    std::cout << "Fourth id: " << fourthId << "\n";
+
+    std::cout << "> Assign interface to device\n";
+    hwgraph.has(thirdId, fourthId);
+
+    std::cout << "> Connect the two interfaces\n";
+    auto busId = hwgraph.createBus("MyBus");
+    static_cast<Hardware::Computational::Bus*>(hwgraph.get(busId))->connects(&hwgraph, secondId); // TODO: Nasty
+    static_cast<Hardware::Computational::Bus*>(hwgraph.get(busId))->connects(&hwgraph, fourthId);
+
+    std::cout << "> Query devices\n";
+    auto devsId = hwgraph.get(hwgraph.devices())->members(&hwgraph); // TODO: Nasty
+    for (auto setId : devsId)
+    {
+        std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
+    }
+
+    std::cout << "> Query interfaces\n";
+    auto ifsId = hwgraph.get(hwgraph.interfaces())->members(&hwgraph);
+    for (auto setId : ifsId)
+    {
+        std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
+    }
+
+    std::cout << "> Query busses\n";
+    auto bussesId = hwgraph.get(hwgraph.busses())->members(&hwgraph);
+    for (auto setId : bussesId)
+    {
+        std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
+    }
+
     std::cout << "> Store hwgraph using YAML" << std::endl;
 
     YAML::Node test;
