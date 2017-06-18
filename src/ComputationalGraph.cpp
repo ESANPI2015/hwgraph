@@ -4,30 +4,17 @@ namespace Hardware {
 namespace Computational {
 
 // Interface
-
-const std::string Interface::superclassLabel = "HardwareInterface";
+const std::string Graph::InterfaceLabel = "HardwareInterface";
 
 // Bus
-
-const std::string Bus::superclassLabel = "Bus";
-
-// Interfaces & Busses
-bool Bus::connects(Graph* graph, const unsigned id)
-{
-    return graph->connects(this->id(), id);
-}
+const std::string Graph::BusLabel = "Bus";
 
 // Device
-const std::string Device::superclassLabel = "Device";
-
-// Devices & Interfaces
-bool Device::has(Graph* graph, const unsigned id)
-{
-    return graph->has(this->id(), id);
-}
+const std::string Graph::DeviceLabel = "Device";
 
 // Graph
 Graph::Graph()
+: Conceptgraph()
 {
 }
 
@@ -35,101 +22,117 @@ Graph::~Graph()
 {
 }
 
-unsigned Graph::deviceClass()
+unsigned Graph::deviceConcept()
 {
-    return getClass(Device::superclassLabel);
-}
-
-unsigned Graph::interfaceClass()
-{
-    return getClass(Interface::superclassLabel);
-}
-
-unsigned Graph::busClass()
-{
-    return getClass(Bus::superclassLabel);
-}
-
-unsigned Graph::devices()
-{
-    // FIXME: This is at least problematic. If we do not make sure, that we only have one representative, then we might produce inconsistent queries here
-    auto superSets = find(Device::superclassLabel);
-    unsigned relId = Hypergraph::create("DUMMY RELATION");
-    for (auto superId : superSets)
+    // TODO: This could be a nice method at concept graph level (named findOrCreate(label))
+    unsigned id;
+    Hyperedges candidates = Conceptgraph::find(Graph::DeviceLabel);
+    if (candidates.size())
     {
-        // For each of the superSets we have to get the instances
-        // and merge the results
-        auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
-        auto nextId  = Hypergraph::unite(relId, otherId);
-        Hypergraph::destroy(relId);
-        //Hypergraph::destroy(otherId);
-        relId = nextId;
+        id = *candidates.begin();
+    } else {
+        id = Conceptgraph::create(Graph::DeviceLabel);
     }
-    auto members = Hypergraph::get(relId)->pointingTo();
-    Hypergraph::destroy(relId);
-    return create(members, "Devices");
+    return id;
 }
 
-unsigned Graph::interfaces()
+unsigned Graph::interfaceConcept()
 {
-    // FIXME: This is at least problematic. If we do not make sure, that we only have one representative, then we might produce inconsistent queries here
-    auto superSets = find(Interface::superclassLabel);
-    unsigned relId = Hypergraph::create("DUMMY RELATION");
-    for (auto superId : superSets)
+    // TODO: This could be a nice method at concept graph level (named findOrCreate(label))
+    unsigned id;
+    Hyperedges candidates = Conceptgraph::find(Graph::InterfaceLabel);
+    if (candidates.size())
     {
-        // For each of the superSets we have to get the instances
-        // and merge the results
-        auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
-        auto nextId  = Hypergraph::unite(relId, otherId);
-        Hypergraph::destroy(relId);
-        relId = nextId;
+        id = *candidates.begin();
+    } else {
+        id = Conceptgraph::create(Graph::InterfaceLabel);
     }
-    auto members = Hypergraph::get(relId)->pointingTo();
-    Hypergraph::destroy(relId);
-    return create(members, "Interfaces");
+    return id;
 }
 
-unsigned Graph::busses()
+unsigned Graph::busConcept()
 {
-    // FIXME: This is at least problematic. If we do not make sure, that we only have one representative, then we might produce inconsistent queries here
-    auto superSets = find(Bus::superclassLabel);
-    unsigned relId = Hypergraph::create("DUMMY RELATION");
-    for (auto superId : superSets)
+    // TODO: This could be a nice method at concept graph level (named findOrCreate(label))
+    unsigned id;
+    Hyperedges candidates = Conceptgraph::find(Graph::BusLabel);
+    if (candidates.size())
     {
-        // For each of the superSets we have to get the instances
-        // and merge the results
-        auto otherId = superclassOf(superId); // Reads: superId -- superclassOf --> ?
-        auto nextId  = Hypergraph::unite(relId, otherId);
-        Hypergraph::destroy(relId);
-        relId = nextId;
+        id = *candidates.begin();
+    } else {
+        id = Conceptgraph::create(Graph::BusLabel);
     }
-    auto members = Hypergraph::get(relId)->pointingTo();
-    Hypergraph::destroy(relId);
-    return create(members, "Busses");
+    return id;
+}
+
+Hypergraph::Hyperedges Graph::devices(const std::string& name)
+{
+    // Use the _devices cache for now.
+    // TODO: However, we need some update or constructor (see ConceptGraph) which takes care of constructing/parsing a hwgraph from a conceptgraph
+    Hyperedges result;
+    for (auto id : _devices)
+    {
+        if (name.empty() || (name == get(id)->label()))
+        {
+            result.insert(id);
+        }
+    }
+    return result;
+}
+
+Hypergraph::Hyperedges Graph::interfaces(const std::string& name)
+{
+    Hyperedges result;
+    for (auto id : _interfaces)
+    {
+        if (name.empty() || (name == get(id)->label()))
+        {
+            result.insert(id);
+        }
+    }
+    return result;
+}
+
+Hypergraph::Hyperedges Graph::busses(const std::string& name)
+{
+    Hyperedges result;
+    for (auto id : _busses)
+    {
+        if (name.empty() || (name == get(id)->label()))
+        {
+            result.insert(id);
+        }
+    }
+    return result;
 }
 
 unsigned Graph::createDevice(const std::string& name)
 {
-    // TODO: Make templated function create<"Device">(name) ? Or at least instantiateFrom("Device", name);
-    auto id = create(name);
-    relateTo(id, deviceClass(), Relation::isALabel);
-    return id;
+    // Find the deviceConcept
+    unsigned A = deviceConcept();
+    unsigned a = create(name);
+    relate(a, A, "IS-A"); // TODO: This should be in a base class
+    _devices.insert(a);
+    return a;
 }
 
 unsigned Graph::createInterface(const std::string& name)
 {
-    // TODO: Make templated function create<"Device">(name) ? Or at least instantiateFrom("Device", name);
-    auto id = create(name);
-    relateTo(id, interfaceClass(), Relation::isALabel);
-    return id;
+    // Find the interfaceConcept
+    unsigned A = interfaceConcept();
+    unsigned a = create(name);
+    relate(a, A, "IS-A"); // TODO: This should be in a base class
+    _interfaces.insert(a);
+    return a;
 }
 
 unsigned Graph::createBus(const std::string& name)
 {
-    // TODO: Make templated function create<"Device">(name) ? Or at least instantiateFrom("Device", name);
-    auto id = create(name);
-    relateTo(id, busClass(), Relation::isALabel);
-    return id;
+    // Find the busConcept
+    unsigned A = busConcept();
+    unsigned a = create(name);
+    relate(a, A, "IS-A"); // TODO: This should be in a base class
+    _busses.insert(a);
+    return a;
 }
 
 unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
@@ -137,10 +140,17 @@ unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
     // Either we
     // * check if deviceId -- isA --> device
     // * or, we imply deviceId -- isA --> device
-    // For now, we follow the second approach (although this ALWAYS creates a new relation!!!)
-    relateTo(deviceId, deviceClass(), Relation::isALabel);
-    relateTo(interfaceId, interfaceClass(), Relation::isALabel);
-    return relateTo(deviceId, interfaceId, Relation::hasLabel);
+    if (_devices.count(deviceId) && _interfaces.count(interfaceId))
+    {
+        return relate(deviceId, interfaceId, "HAS");
+    }
+    return 0;
+}
+
+unsigned Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
+{
+    // TODO: Implement
+    return 0;
 }
 
 unsigned Graph::connects(unsigned busId, unsigned interfaceId)
@@ -148,10 +158,17 @@ unsigned Graph::connects(unsigned busId, unsigned interfaceId)
     // Either we
     // * check if deviceId -- isA --> device
     // * or, we imply deviceId -- isA --> device
-    // For now, we follow the second approach (although this ALWAYS creates a new relation!!!)
-    relateTo(busId, busClass(), Relation::isALabel);
-    relateTo(interfaceId, interfaceClass(), Relation::isALabel);
-    return relateTo(busId, interfaceId, Relation::connectedToLabel);
+    if (_busses.count(busId) && _interfaces.count(interfaceId))
+    {
+        return relate(busId, interfaceId, "CONNECTS");
+    }
+    return 0;
+}
+
+unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
+{
+    // TODO: Implement
+    return 0;
 }
 
 }
