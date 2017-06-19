@@ -6,22 +6,22 @@
 
 int main(void)
 {
-    // TODO:
     // * Import hardware spec
     // * Search for all devices
+    // TODO:
     // * Create a toplvl vhdl skeleton for each device
 
     // Test case:
     auto hypergraph = YAML::LoadFile("hwgraph.yml").as<Hypergraph*>();
-    auto hwgraph = static_cast<Hardware::Computational::Graph*>(hypergraph);
-
+    Conceptgraph cgraph(*hypergraph);
+    Hardware::Computational::Graph hwgraph(cgraph);
     // Find specific device(s) in the set of all devices
-    auto deviceIds = hwgraph->members(hwgraph->devices());
+    auto deviceIds = hwgraph.devices();
 
     // For each of these devices
     for (auto deviceId : deviceIds)
     {
-        auto device = hwgraph->get(deviceId);
+        auto device = hwgraph.get(deviceId);
 
         // Produce VHDL skeleton
         std::cout << "-- CHWG to VHDL TOPLVL Generator --\n";
@@ -30,18 +30,17 @@ int main(void)
         std::cout << "entity " << device->label() << " is\n";
         std::cout << "port(\n";
         std::cout << "-- interfaces here --\n";
-        // TODO: Instead of set intersection we could just create TWO RELATIONS and use hyperedge intersection?
-        // Get all things related to the device by a "has" relation
-        auto aggregatesId = hwgraph->create(hwgraph->directlyRelatedTo(deviceId, Relation::hasLabel), "Aggregates");
         // Get all interfaces
-        auto interfacesId = hwgraph->interfaces();
-        // The intersection between the Set of all things the device owns && all interfaces of 
-        // TODO: Set intersection not yet implemented. Use aggregates directly for now!
-        //auto myinterfacesId = hwgraph->intersect(aggregatesId, interfacesId);
-        auto myinterfacesId = aggregatesId;
-        for (auto interfaceId : hwgraph->members(myinterfacesId))
+        auto allInterfaceIds = hwgraph.interfaces();
+        // Get all "HAS" relations of device
+        auto allHasRelationsOfDev = hwgraph.relationsOf(deviceId, "HAS");
+        // Get all the concepts the "HAS" relations point to
+        auto allChildrenOfDev = hwgraph.to(allHasRelationsOfDev);
+        // The interfaces of the device are in the intersection of allInterfaceIds and allChildrenOfDev
+        auto myInterfaceIds = hwgraph.intersect(allInterfaceIds, allChildrenOfDev);
+        for (auto interfaceId : myInterfaceIds)
         {
-            auto interface = hwgraph->get(interfaceId);
+            auto interface = hwgraph.get(interfaceId);
             std::cout << "-- Interface: " << interface->label() << std::endl;
             std::cout << "-- TODO: How do we know what pins/groups and directions we have to assign here?\n";
         }
@@ -51,7 +50,6 @@ int main(void)
         std::cout << "-- signals here --\n";
         std::cout << "\nbegin\n";
         std::cout << "-- processes here --\n";
-        std::cout << "end BEHAVIORAL;\n";
+        std::cout << "end BEHAVIORAL;\n\n";
     }
-    delete hwgraph;
 }

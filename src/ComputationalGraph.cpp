@@ -1,4 +1,5 @@
 #include "ComputationalGraph.hpp"
+#include <iostream>
 
 namespace Hardware {
 namespace Computational {
@@ -25,7 +26,8 @@ Graph::Graph(Conceptgraph& A)
     for (unsigned candidateId : candidates)
     {
         // We now have access to all ROOT NODES: traverse the subgraph spanned by IS-A relations and add every hedge to the corresponding set
-        Hyperedges devices = traverse(candidateId, "", "IS-A");
+        // This means that we have to go in opposite direction of the IS-A relation
+        Hyperedges devices = traverse(candidateId, "", "IS-A", UP);
         _devices.insert(devices.begin(), devices.end());
     }
     // Handle interface concept
@@ -33,7 +35,7 @@ Graph::Graph(Conceptgraph& A)
     for (unsigned candidateId : candidates)
     {
         // We now have access to all ROOT NODES: traverse the subgraph spanned by IS-A relations and add every hedge to the corresponding set
-        Hyperedges interfaces = traverse(candidateId, "", "IS-A");
+        Hyperedges interfaces = traverse(candidateId, "", "IS-A", UP);
         _interfaces.insert(interfaces.begin(), interfaces.end());
     }
     // Handle bus concept
@@ -41,7 +43,7 @@ Graph::Graph(Conceptgraph& A)
     for (unsigned candidateId : candidates)
     {
         // We now have access to all ROOT NODES: traverse the subgraph spanned by IS-A relations and add every hedge to the corresponding set
-        Hyperedges busses = traverse(candidateId, "", "IS-A");
+        Hyperedges busses = traverse(candidateId, "", "IS-A", UP);
         _busses.insert(busses.begin(), busses.end());
     }
     // Now we have sorted everything ... maybe we should have this also as a reparse function?
