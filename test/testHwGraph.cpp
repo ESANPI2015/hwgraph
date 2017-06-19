@@ -42,25 +42,25 @@ int main(void)
 
     std::cout << "> Connect the two interfaces\n";
     auto busId = hwgraph.createBus("MyBus");
-    static_cast<Hardware::Computational::Bus*>(hwgraph.get(busId))->connects(&hwgraph, secondId); // TODO: Nasty
-    static_cast<Hardware::Computational::Bus*>(hwgraph.get(busId))->connects(&hwgraph, fourthId);
+    hwgraph.connects(busId, secondId);
+    hwgraph.connects(busId, fourthId);
 
     std::cout << "> Query devices\n";
-    auto devsId = hwgraph.get(hwgraph.devices())->members(&hwgraph); // TODO: Nasty
+    auto devsId = hwgraph.devices();
     for (auto setId : devsId)
     {
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
     }
 
     std::cout << "> Query interfaces\n";
-    auto ifsId = hwgraph.get(hwgraph.interfaces())->members(&hwgraph);
+    auto ifsId = hwgraph.interfaces();
     for (auto setId : ifsId)
     {
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
     }
 
     std::cout << "> Query busses\n";
-    auto bussesId = hwgraph.get(hwgraph.busses())->members(&hwgraph);
+    auto bussesId = hwgraph.busses();
     for (auto setId : bussesId)
     {
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;

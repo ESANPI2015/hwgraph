@@ -17,7 +17,7 @@ namespace Computational {
     
     DEVICE -- has --> INTERFACE <-- connects(>=2) -- BUS
 
-    If some X is a DEVICE then there exists a path of ISA relations from X to DEVICE
+    If some X is a DEVICE then there exists a path of IS-A relations from X to DEVICE
     
     Open questions:
     * Does it makes sense to have 1-1, 1-N, N-1 and N-M versions of the relations?
@@ -39,6 +39,7 @@ class Graph : public Conceptgraph
 
         // Constructor/Destructor
         Graph();
+        Graph(Conceptgraph& A);
         ~Graph();
 
         // Factory functions

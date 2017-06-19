@@ -45,10 +45,10 @@ target_link_libraries(hwgraph
     ${hwgraph_PKGCONFIG_STATIC_LIBRARIES}
     )
 
-#add_executable(testHwGraph test/testHwGraph.cpp)
-#target_link_libraries(testHwGraph hwgraph)
-#install(TARGETS testHwGraph
-#RUNTIME DESTINATION bin)
+add_executable(testHwGraph test/testHwGraph.cpp)
+target_link_libraries(testHwGraph hwgraph)
+install(TARGETS testHwGraph
+RUNTIME DESTINATION bin)
 
 #add_executable(gen_vhdl_toplvl tools/gen_vhdl_toplvl.cpp)
 #target_link_libraries(gen_vhdl_toplvl hwgraph)
