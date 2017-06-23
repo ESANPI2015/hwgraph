@@ -18,6 +18,8 @@ namespace Computational {
     DEVICE -- has --> INTERFACE <-- connects(>=2) -- BUS
 
     If some X is a DEVICE then there exists a path of IS-A relations from X to DEVICE
+
+    NOTE: The concepts are encoded by UNIQUE IDS. This makes them natural language independent.
     
     Open questions:
     * Does it makes sense to have 1-1, 1-N, N-1 and N-M versions of the relations?
@@ -32,10 +34,14 @@ class Graph;
 class Graph : public Conceptgraph
 {
     public:
-        // Labels for identifiing devices, interfaces and busses
-        static const std::string DeviceLabel;
-        static const std::string InterfaceLabel;
-        static const std::string BusLabel;
+        // Ids for identifiing devices, interfaces and busses
+        static const unsigned DeviceId;
+        static const unsigned InterfaceId;
+        static const unsigned BusId;
+        // Ids for identifiing IsA, HasA and Connects
+        static const unsigned IsAId;
+        static const unsigned HasAId;
+        static const unsigned ConnectsId;
 
         // Constructor/Destructor
         Graph();
@@ -58,17 +64,6 @@ class Graph : public Conceptgraph
         // Global functions for busses & interfaces
         unsigned connects(const unsigned busId, const unsigned interfaceId);
         unsigned connects(const Hyperedges& busses, const Hyperedges& interfaces);
-
-    protected:
-        // get concept and relation candidates
-        unsigned deviceConcept();
-        unsigned interfaceConcept();
-        unsigned busConcept();
-
-        // three sets to store which hedges fall into the different categories (this is a cache)
-        Hyperedges _devices;
-        Hyperedges _interfaces;
-        Hyperedges _busses;
 };
 
 }

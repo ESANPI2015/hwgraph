@@ -4,165 +4,94 @@
 namespace Hardware {
 namespace Computational {
 
-// Interface
-const std::string Graph::InterfaceLabel = "HardwareInterface";
-// Bus
-const std::string Graph::BusLabel = "Bus";
-// Device
-const std::string Graph::DeviceLabel = "Device";
+// DICTIONARY
+// Concept Ids
+const unsigned Graph::InterfaceId = 1001;
+const unsigned Graph::BusId       = 1002;
+const unsigned Graph::DeviceId    = 1000;
+// Relation Concept Ids
+// TODO: These are general enough to be noted in a common base class/library
+const unsigned Graph::IsAId      = 111;
+const unsigned Graph::HasAId     = 222;
+const unsigned Graph::ConnectsId = 333;
 
 // Graph
 Graph::Graph()
 : Conceptgraph()
 {
+    Conceptgraph::create(Graph::DeviceId, "DEVICE");
+    Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
+    Conceptgraph::create(Graph::BusId, "BUS");
+    // FIXME: The following concepts should be relations not concepts ... or?
+    Conceptgraph::create(Graph::IsAId, "IS-A");
+    Conceptgraph::create(Graph::HasAId, "HAS-A");
+    Conceptgraph::create(Graph::ConnectsId, "CONNECTS");
 }
 
 Graph::Graph(Conceptgraph& A)
 : Conceptgraph(A)
 {
-    // We have to search the underlying concept graph and sort everything into 3 sets
-    // A <-- ISA --> DeviceLabel means that A is to be inserted into _devices set
-    Hyperedges candidates = Conceptgraph::find(Graph::DeviceLabel);
-    for (unsigned candidateId : candidates)
-    {
-        // We now have access to all ROOT NODES: traverse the subgraph spanned by IS-A relations and add every hedge to the corresponding set
-        // This means that we have to go in opposite direction of the IS-A relation
-        Hyperedges devices = traverse(candidateId, "", "IS-A", UP);
-        _devices.insert(devices.begin(), devices.end());
-    }
-    // Handle interface concept
-    candidates = Conceptgraph::find(Graph::InterfaceLabel);
-    for (unsigned candidateId : candidates)
-    {
-        // We now have access to all ROOT NODES: traverse the subgraph spanned by IS-A relations and add every hedge to the corresponding set
-        Hyperedges interfaces = traverse(candidateId, "", "IS-A", UP);
-        _interfaces.insert(interfaces.begin(), interfaces.end());
-    }
-    // Handle bus concept
-    candidates = Conceptgraph::find(Graph::BusLabel);
-    for (unsigned candidateId : candidates)
-    {
-        // We now have access to all ROOT NODES: traverse the subgraph spanned by IS-A relations and add every hedge to the corresponding set
-        Hyperedges busses = traverse(candidateId, "", "IS-A", UP);
-        _busses.insert(busses.begin(), busses.end());
-    }
-    // Now we have sorted everything ... maybe we should have this also as a reparse function?
+    Conceptgraph::create(Graph::DeviceId, "DEVICE");
+    Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
+    Conceptgraph::create(Graph::BusId, "BUS");
+    // FIXME: The following concepts should be relations not concepts ... or?
+    Conceptgraph::create(Graph::IsAId, "IS-A");
+    Conceptgraph::create(Graph::HasAId, "HAS-A");
+    Conceptgraph::create(Graph::ConnectsId, "CONNECTS");
 }
 
 Graph::~Graph()
 {
 }
 
-unsigned Graph::deviceConcept()
-{
-    // TODO: This could be a nice method at concept graph level (named findOrCreate(label))
-    unsigned id;
-    Hyperedges candidates = Conceptgraph::find(Graph::DeviceLabel);
-    if (candidates.size())
-    {
-        id = *candidates.begin();
-    } else {
-        id = Conceptgraph::create(Graph::DeviceLabel);
-    }
-    return id;
-}
-
-unsigned Graph::interfaceConcept()
-{
-    // TODO: This could be a nice method at concept graph level (named findOrCreate(label))
-    unsigned id;
-    Hyperedges candidates = Conceptgraph::find(Graph::InterfaceLabel);
-    if (candidates.size())
-    {
-        id = *candidates.begin();
-    } else {
-        id = Conceptgraph::create(Graph::InterfaceLabel);
-    }
-    return id;
-}
-
-unsigned Graph::busConcept()
-{
-    // TODO: This could be a nice method at concept graph level (named findOrCreate(label))
-    unsigned id;
-    Hyperedges candidates = Conceptgraph::find(Graph::BusLabel);
-    if (candidates.size())
-    {
-        id = *candidates.begin();
-    } else {
-        id = Conceptgraph::create(Graph::BusLabel);
-    }
-    return id;
-}
-
 Hypergraph::Hyperedges Graph::devices(const std::string& name)
 {
-    // Use the _devices cache for now.
-    // TODO: However, we need some update or constructor (see ConceptGraph) which takes care of constructing/parsing a hwgraph from a conceptgraph
     Hyperedges result;
-    for (auto id : _devices)
-    {
-        if (name.empty() || (name == get(id)->label()))
-        {
-            result.insert(id);
-        }
-    }
+    result = Conceptgraph::traverse(Graph::DeviceId, name, get(Graph::IsAId)->label(), UP);
+    result.erase(Graph::DeviceId);
     return result;
 }
 
 Hypergraph::Hyperedges Graph::interfaces(const std::string& name)
 {
     Hyperedges result;
-    for (auto id : _interfaces)
-    {
-        if (name.empty() || (name == get(id)->label()))
-        {
-            result.insert(id);
-        }
-    }
+    result = Conceptgraph::traverse(Graph::InterfaceId, name, get(Graph::IsAId)->label(), UP);
+    result.erase(Graph::InterfaceId);
     return result;
 }
 
 Hypergraph::Hyperedges Graph::busses(const std::string& name)
 {
     Hyperedges result;
-    for (auto id : _busses)
-    {
-        if (name.empty() || (name == get(id)->label()))
-        {
-            result.insert(id);
-        }
-    }
+    result = Conceptgraph::traverse(Graph::BusId, name, get(Graph::IsAId)->label(), UP);
+    result.erase(Graph::BusId);
     return result;
 }
 
 unsigned Graph::createDevice(const std::string& name)
 {
-    // Find the deviceConcept
-    unsigned A = deviceConcept();
     unsigned a = create(name);
-    relate(a, A, "IS-A"); // TODO: This should be in a base class
-    _devices.insert(a);
+    Conceptgraph::create(Graph::DeviceId, "DEVICE");
+    Conceptgraph::create(Graph::IsAId, "IS-A");
+    Conceptgraph::relate(a, Graph::DeviceId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
     return a;
 }
 
 unsigned Graph::createInterface(const std::string& name)
 {
-    // Find the interfaceConcept
-    unsigned A = interfaceConcept();
     unsigned a = create(name);
-    relate(a, A, "IS-A"); // TODO: This should be in a base class
-    _interfaces.insert(a);
+    Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
+    Conceptgraph::create(Graph::IsAId, "IS-A");
+    Conceptgraph::relate(a, Graph::InterfaceId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
     return a;
 }
 
 unsigned Graph::createBus(const std::string& name)
 {
-    // Find the busConcept
-    unsigned A = busConcept();
     unsigned a = create(name);
-    relate(a, A, "IS-A"); // TODO: This should be in a base class
-    _busses.insert(a);
+    Conceptgraph::create(Graph::BusId, "BUS");
+    Conceptgraph::create(Graph::IsAId, "IS-A");
+    Conceptgraph::relate(a, Graph::BusId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
     return a;
 }
 
@@ -171,18 +100,17 @@ unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
     // Either we
     // * check if deviceId -- isA --> device
     // * or, we imply deviceId -- isA --> device
-    // This is the first approach?
-    if (_devices.count(deviceId) && _interfaces.count(interfaceId))
+    if (devices().count(deviceId) && interfaces().count(interfaceId))
     {
-        return relate(deviceId, interfaceId, "HAS"); // TODO: This relation label should be in a base class/dictionary
+        return relate(deviceId, interfaceId, get(Graph::HasAId)->label());
     }
     return 0;
 }
 
 unsigned Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
 {
-    // TODO: Implement. Try to use one N:M relation
-    return 0;
+    // Is this elegant or not :)
+    return relate(intersect(this->devices(), devices), intersect(this->interfaces(), interfaces), get(Graph::HasAId)->label());
 }
 
 unsigned Graph::connects(unsigned busId, unsigned interfaceId)
@@ -191,17 +119,17 @@ unsigned Graph::connects(unsigned busId, unsigned interfaceId)
     // * check if deviceId -- isA --> device
     // * or, we imply deviceId -- isA --> device
     // This is the first approach?
-    if (_busses.count(busId) && _interfaces.count(interfaceId))
+    if (busses().count(busId) && interfaces().count(interfaceId))
     {
-        return relate(busId, interfaceId, "CONNECTS"); // TODO: This relation label should be in a base class/dictionary
+        return relate(busId, interfaceId, get(Graph::ConnectsId)->label()); // TODO: This relation label should be in a base class/dictionary
     }
     return 0;
 }
 
 unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
 {
-    // TODO: Implement. Try to use one N:M relation
-    return 0;
+    // Is this elegant or not :)
+    return relate(intersect(this->busses(), busses), intersect(this->interfaces(), interfaces), get(Graph::ConnectsId)->label());
 }
 
 }

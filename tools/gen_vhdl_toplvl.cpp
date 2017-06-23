@@ -33,7 +33,7 @@ int main(void)
         // Get all interfaces
         auto allInterfaceIds = hwgraph.interfaces();
         // Get all "HAS" relations of device
-        auto allHasRelationsOfDev = hwgraph.relationsOf(deviceId, "HAS");
+        auto allHasRelationsOfDev = hwgraph.relationsOf(deviceId, hwgraph.get(Hardware::Computational::Graph::HasAId)->label());
         // Get all the concepts the "HAS" relations point to
         auto allChildrenOfDev = hwgraph.to(allHasRelationsOfDev);
         // The interfaces of the device are in the intersection of allInterfaceIds and allChildrenOfDev
