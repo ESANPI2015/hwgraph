@@ -16,8 +16,7 @@ const unsigned Graph::HasAId     = 222;
 const unsigned Graph::ConnectsId = 333;
 
 // Graph
-Graph::Graph()
-: Conceptgraph()
+void Graph::createMainConcepts()
 {
     Conceptgraph::create(Graph::DeviceId, "DEVICE");
     Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
@@ -28,16 +27,16 @@ Graph::Graph()
     Conceptgraph::create(Graph::ConnectsId, "CONNECTS");
 }
 
+Graph::Graph()
+: Conceptgraph()
+{
+    createMainConcepts();
+}
+
 Graph::Graph(Conceptgraph& A)
 : Conceptgraph(A)
 {
-    Conceptgraph::create(Graph::DeviceId, "DEVICE");
-    Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
-    Conceptgraph::create(Graph::BusId, "BUS");
-    // FIXME: The following concepts should be relations not concepts ... or?
-    Conceptgraph::create(Graph::IsAId, "IS-A");
-    Conceptgraph::create(Graph::HasAId, "HAS-A");
-    Conceptgraph::create(Graph::ConnectsId, "CONNECTS");
+    createMainConcepts();
 }
 
 Graph::~Graph()
@@ -70,9 +69,8 @@ Hypergraph::Hyperedges Graph::busses(const std::string& name)
 
 unsigned Graph::createDevice(const std::string& name)
 {
+    createMainConcepts();
     unsigned a = create(name);
-    Conceptgraph::create(Graph::DeviceId, "DEVICE");
-    Conceptgraph::create(Graph::IsAId, "IS-A");
     Conceptgraph::relate(a, Graph::DeviceId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
     return a;
 }
@@ -80,8 +78,7 @@ unsigned Graph::createDevice(const std::string& name)
 unsigned Graph::createInterface(const std::string& name)
 {
     unsigned a = create(name);
-    Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
-    Conceptgraph::create(Graph::IsAId, "IS-A");
+    createMainConcepts();
     Conceptgraph::relate(a, Graph::InterfaceId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
     return a;
 }
@@ -89,8 +86,7 @@ unsigned Graph::createInterface(const std::string& name)
 unsigned Graph::createBus(const std::string& name)
 {
     unsigned a = create(name);
-    Conceptgraph::create(Graph::BusId, "BUS");
-    Conceptgraph::create(Graph::IsAId, "IS-A");
+    createMainConcepts();
     Conceptgraph::relate(a, Graph::BusId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
     return a;
 }

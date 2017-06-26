@@ -48,6 +48,9 @@ class Graph : public Conceptgraph
         Graph(Conceptgraph& A);
         ~Graph();
 
+        // Creates the main concepts
+        void createMainConcepts();
+
         // Factory functions
         unsigned createDevice(const std::string& name="Device");
         unsigned createInterface(const std::string& name="Interface");
