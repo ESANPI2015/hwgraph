@@ -11,9 +11,9 @@ const unsigned Graph::BusId       = 1002;
 const unsigned Graph::DeviceId    = 1000;
 // Relation Concept Ids
 // TODO: These are general enough to be noted in a common base class/library
-const unsigned Graph::IsAId      = 111;
-const unsigned Graph::HasAId     = 222;
-const unsigned Graph::ConnectsId = 333;
+const unsigned Graph::IsAId      = 11;
+const unsigned Graph::HasAId     = 22;
+const unsigned Graph::ConnectsId = 33;
 
 // Graph
 void Graph::createMainConcepts()
