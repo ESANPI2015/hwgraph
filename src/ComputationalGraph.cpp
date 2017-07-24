@@ -10,21 +10,21 @@ const unsigned Graph::InterfaceId = 1001;
 const unsigned Graph::BusId       = 1002;
 const unsigned Graph::DeviceId    = 1000;
 // Relation Concept Ids
-// TODO: These are general enough to be noted in a common base class/library
-const unsigned Graph::IsAId      = 11;
-const unsigned Graph::HasAId     = 22;
-const unsigned Graph::ConnectsId = 33;
+const unsigned Graph::IsAId      = 1003;
+const unsigned Graph::HasAId     = 1004;
+const unsigned Graph::ConnectsId = 1005;
 
 // Graph
 void Graph::createMainConcepts()
 {
+    // Create concepts
     Conceptgraph::create(Graph::DeviceId, "DEVICE");
     Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
     Conceptgraph::create(Graph::BusId, "BUS");
-    // FIXME: The following concepts should be relations not concepts ... or?
-    Conceptgraph::create(Graph::IsAId, "IS-A");
-    Conceptgraph::create(Graph::HasAId, "HAS-A");
-    Conceptgraph::create(Graph::ConnectsId, "CONNECTS");
+    // Define relations
+    Conceptgraph::relate(Graph::IsAId, 1, 1, "IS-A");
+    Conceptgraph::relate(Graph::HasAId, Graph::DeviceId, Graph::InterfaceId, "HAS-A");
+    Conceptgraph::relate(Graph::ConnectsId, Graph::BusId, Graph::InterfaceId, "CONNECTS");
 }
 
 Graph::Graph()
@@ -71,7 +71,7 @@ unsigned Graph::createDevice(const std::string& name)
 {
     createMainConcepts();
     unsigned a = create(name);
-    Conceptgraph::relate(a, Graph::DeviceId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
+    Conceptgraph::relate(a, Graph::DeviceId, Graph::IsAId); // TODO: This should be in a base class
     return a;
 }
 
@@ -79,7 +79,7 @@ unsigned Graph::createInterface(const std::string& name)
 {
     unsigned a = create(name);
     createMainConcepts();
-    Conceptgraph::relate(a, Graph::InterfaceId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
+    Conceptgraph::relate(a, Graph::InterfaceId, Graph::IsAId); // TODO: This should be in a base class
     return a;
 }
 
@@ -87,7 +87,7 @@ unsigned Graph::createBus(const std::string& name)
 {
     unsigned a = create(name);
     createMainConcepts();
-    Conceptgraph::relate(a, Graph::BusId, get(Graph::IsAId)->label()); // TODO: This should be in a base class
+    Conceptgraph::relate(a, Graph::BusId, Graph::IsAId); // TODO: This should be in a base class
     return a;
 }
 
@@ -98,7 +98,7 @@ unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
     // * or, we imply deviceId -- isA --> device
     if (devices().count(deviceId) && interfaces().count(interfaceId))
     {
-        return relate(deviceId, interfaceId, get(Graph::HasAId)->label());
+        return relate(deviceId, interfaceId, Graph::HasAId);
     }
     return 0;
 }
@@ -106,7 +106,7 @@ unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
 unsigned Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
 {
     // Is this elegant or not :)
-    return relate(intersect(this->devices(), devices), intersect(this->interfaces(), interfaces), get(Graph::HasAId)->label());
+    return relate(intersect(this->devices(), devices), intersect(this->interfaces(), interfaces), Graph::HasAId);
 }
 
 unsigned Graph::connects(unsigned busId, unsigned interfaceId)
@@ -117,7 +117,7 @@ unsigned Graph::connects(unsigned busId, unsigned interfaceId)
     // This is the first approach?
     if (busses().count(busId) && interfaces().count(interfaceId))
     {
-        return relate(busId, interfaceId, get(Graph::ConnectsId)->label()); // TODO: This relation label should be in a base class/dictionary
+        return relate(busId, interfaceId, Graph::ConnectsId);
     }
     return 0;
 }
@@ -125,7 +125,7 @@ unsigned Graph::connects(unsigned busId, unsigned interfaceId)
 unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
 {
     // Is this elegant or not :)
-    return relate(intersect(this->busses(), busses), intersect(this->interfaces(), interfaces), get(Graph::ConnectsId)->label());
+    return relate(intersect(this->busses(), busses), intersect(this->interfaces(), interfaces), Graph::ConnectsId);
 }
 
 }

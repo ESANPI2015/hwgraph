@@ -21,12 +21,6 @@ namespace Computational {
 
     NOTE: The concepts are encoded by UNIQUE IDS. This makes them natural language independent.
     
-    Open questions:
-    * Does it makes sense to have 1-1, 1-N, N-1 and N-M versions of the relations?
-    * Does it makes sense to use (N*1-1) and (N*1-M) versions of the N-1,N-M relations?
-    * Would it be better to just use SIMPLE 2-hyperedges for the relations (everything based on 1-1 relations)?
-      NOTE: This would better fit to databases with fixed tables like ID -> (ID, ID)
-    * How to we encode and enforce constraints on relations?
 */
 
 class Graph;
@@ -38,6 +32,7 @@ class Graph : public Conceptgraph
         static const unsigned DeviceId;
         static const unsigned InterfaceId;
         static const unsigned BusId;
+
         // Ids for identifiing IsA, HasA and Connects
         static const unsigned IsAId;
         static const unsigned HasAId;
