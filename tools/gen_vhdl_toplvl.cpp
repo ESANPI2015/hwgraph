@@ -14,7 +14,8 @@ int main(void)
     // Test case:
     auto hypergraph = YAML::LoadFile("hwgraph.yml").as<Hypergraph*>();
     Conceptgraph cgraph(*hypergraph);
-    Hardware::Computational::Graph hwgraph(cgraph);
+    CommonConceptGraph ccgraph(cgraph);
+    Hardware::Computational::Graph hwgraph(ccgraph);
     // Find specific device(s) in the set of all devices
     auto deviceIds = hwgraph.devices();
 
@@ -30,14 +31,8 @@ int main(void)
         std::cout << "entity " << device->label() << " is\n";
         std::cout << "port(\n";
         std::cout << "-- interfaces here --\n";
-        // Get all interfaces
-        auto allInterfaceIds = hwgraph.interfaces();
-        // Get all "HAS" relations of device
-        auto allHasRelationsOfDev = hwgraph.relationsOf(deviceId, hwgraph.get(Hardware::Computational::Graph::HasAId)->label());
-        // Get all the concepts the "HAS" relations point to
-        auto allChildrenOfDev = hwgraph.to(allHasRelationsOfDev);
-        // The interfaces of the device are in the intersection of allInterfaceIds and allChildrenOfDev
-        auto myInterfaceIds = hwgraph.intersect(allInterfaceIds, allChildrenOfDev);
+        // The interfaces of the device are all children of the device also being an interface
+        auto myInterfaceIds = hwgraph.intersect(hwgraph.childrenOf(deviceId), hwgraph.interfaces());
         for (auto interfaceId : myInterfaceIds)
         {
             auto interface = hwgraph.get(interfaceId);

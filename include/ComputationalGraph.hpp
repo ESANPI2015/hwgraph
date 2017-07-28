@@ -1,7 +1,7 @@
 #ifndef _HW_COMPUTATIONAL_GRAPH_HPP
 #define _HW_COMPUTATIONAL_GRAPH_HPP
 
-#include "Conceptgraph.hpp"
+#include "CommonConceptGraph.hpp"
 
 namespace Hardware {
 namespace Computational {
@@ -25,7 +25,7 @@ namespace Computational {
 
 class Graph;
 
-class Graph : public Conceptgraph
+class Graph : public CommonConceptGraph
 {
     public:
         // Ids for identifiing devices, interfaces and busses
@@ -40,7 +40,7 @@ class Graph : public Conceptgraph
 
         // Constructor/Destructor
         Graph();
-        Graph(Conceptgraph& A);
+        Graph(CommonConceptGraph& A);
         ~Graph();
 
         // Creates the main concepts
