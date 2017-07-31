@@ -89,34 +89,26 @@ unsigned Graph::createBus(const std::string& name)
 
 unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
 {
-    // check if deviceId -- isA --> device
-    if (devices().count(deviceId) && interfaces().count(interfaceId))
-    {
-        return CommonConceptGraph::relateFrom(deviceId, interfaceId, Graph::HasAId);
-    }
-    return 0;
+    // TODO: domain checking should incorporate classes AND instances thereof
+    return CommonConceptGraph::relateFrom(deviceId, interfaceId, Graph::HasAId);
 }
 
 unsigned Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
 {
-    // Is this elegant or not :)
-    return CommonConceptGraph::relateFrom(intersect(this->devices(), devices), intersect(this->interfaces(), interfaces), Graph::HasAId);
+    // TODO: domain checking should incorporate classes AND instances thereof
+    return CommonConceptGraph::relateFrom(devices, interfaces, Graph::HasAId);
 }
 
 unsigned Graph::connects(unsigned busId, unsigned interfaceId)
 {
-    // Check domains
-    if (busses().count(busId) && interfaces().count(interfaceId))
-    {
-        return CommonConceptGraph::relateFrom(busId, interfaceId, Graph::ConnectsId);
-    }
-    return 0;
+    // TODO: domain checking should incorporate classes AND instances thereof
+    return CommonConceptGraph::relateFrom(busId, interfaceId, Graph::ConnectsId);
 }
 
 unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
 {
-    // Is this elegant or not :)
-    return relateFrom(intersect(this->busses(), busses), intersect(this->interfaces(), interfaces), Graph::ConnectsId);
+    // TODO: domain checking should incorporate classes AND instances thereof
+    return CommonConceptGraph::relateFrom(busses, interfaces, Graph::ConnectsId);
 }
 
 }
