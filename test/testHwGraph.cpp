@@ -80,6 +80,70 @@ int main(void)
     }
     fout.close();
 
+    std::cout << "> Cleanup the hwgraph\n";
+    auto allIds = hwgraph.find();
+    for (auto id : allIds)
+        hwgraph.destroy(id);
+    hwgraph.createMainConcepts();
+
+    std::cout << "> Create real world example\n";
+    // Create classes
+    // NOTE: The following reads as "Every mdaq2 is a DEVICE"
+    unsigned mdaqSC = hwgraph.createDevice("mdaq2");
+    unsigned pcSC = hwgraph.createDevice("PC");
+    unsigned spineSC = hwgraph.createDevice("spine_board");
+    unsigned convSC = hwgraph.createDevice("LVDS2USB");
+    unsigned lvdsSC = hwgraph.createInterface("LVDS");
+    unsigned usbSC = hwgraph.createInterface("USB");
+    unsigned ndlcomSC = hwgraph.createBus("NDLCom");
+    unsigned usbBusSC = hwgraph.createBus("USB"); // Test if a second concept with the same name can be created
+
+    // Create interfaces
+    // NOTE: The following reads as "Every mdaq2 HAS a LVDS1 and a LVDS2 interface of class LVDS"
+    unsigned id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
+    unsigned id2 = hwgraph.instantiateFrom(lvdsSC, "LVDS2");
+    hwgraph.has(Hypergraph::Hyperedges{mdaqSC}, Hypergraph::Hyperedges{id1,id2});
+    id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
+    id2 = hwgraph.instantiateFrom(lvdsSC, "LVDS2");
+    hwgraph.has(Hypergraph::Hyperedges{spineSC}, Hypergraph::Hyperedges{id1,id2});
+    id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
+    id2 = hwgraph.instantiateFrom(usbSC, "USB1");
+    hwgraph.has(Hypergraph::Hyperedges{convSC}, Hypergraph::Hyperedges{id1,id2});
+    id2 = hwgraph.instantiateFrom(usbSC, "/dev/ttyUSB0");
+    hwgraph.has(pcSC, id2);
+
+    // The hardware graph now contains the models of the devices we want to instantiate and connect in the following
+    // We start with instantiating one device, the interfaces we want to connect
+    // NOTE: The following reads as "There is a TEST BOARD of type mdaq2 with an LVDS1 interface of type LVDS"
+    unsigned mdaqId = hwgraph.instantiateFrom(mdaqSC, "TEST BOARD");
+    hwgraph.has(mdaqId, hwgraph.instantiateFrom(lvdsSC, "LVDS1")); // Note, that we dont need LVDS2!
+    unsigned spineId = hwgraph.instantiateFrom(spineSC);
+    hwgraph.has(Hypergraph::Hyperedges{spineId}, Hypergraph::Hyperedges{hwgraph.instantiateFrom(lvdsSC, "LVDS1"), hwgraph.instantiateFrom(lvdsSC, "LVDS2")});
+    unsigned convId = hwgraph.instantiateFrom(convSC);
+    hwgraph.has(Hypergraph::Hyperedges{convId}, Hypergraph::Hyperedges{hwgraph.instantiateFrom(lvdsSC, "LVDS1"), hwgraph.instantiateFrom(usbSC, "USB1")});
+    unsigned laptopId = hwgraph.instantiateFrom(pcSC, "My Laptop");
+    hwgraph.has(laptopId, hwgraph.instantiateFrom(usbSC, "/dev/ttyUSB0"));
+
+    // We should now have the devices and the needed interfaces. It is time to connect them
+    // NOTE: The following reads as "There is a bus of type NDLCom which connects a CHILD of TEST BOARD called LVDS1 and a CHILD of spine_board calles LVDS1"
+    // FIXME: This is not sound. Actually we also have to check if this CHILD os TEST BOARD is also a CHILD of the superclass of TEST BOARD and also an interface!
+    hwgraph.connects(Hypergraph::Hyperedges{hwgraph.instantiateFrom(ndlcomSC)}, hwgraph.unite(hwgraph.childrenOf(mdaqId,"LVDS1"),hwgraph.childrenOf(spineId,"LVDS1")));
+    hwgraph.connects(Hypergraph::Hyperedges{hwgraph.instantiateFrom(ndlcomSC)}, hwgraph.unite(hwgraph.childrenOf(convId,"LVDS1"),hwgraph.childrenOf(spineId,"LVDS2")));
+    hwgraph.connects(Hypergraph::Hyperedges{hwgraph.instantiateFrom(usbBusSC)}, hwgraph.unite(hwgraph.childrenOf(convId,"USB1"),hwgraph.childrenOf(laptopId,"/dev/ttyUSB0")));
+
+    // We could now make the specific instances and the network they form PART-OF some X. This X would then represent all occurences of this setting/network.
+
+    std::cout << "> Store hwgraph using YAML" << std::endl;
+
+    test = static_cast<Hypergraph*>(&hwgraph);
+    fout.open("demo.yml");
+    if(fout.good()) {
+        fout << test;
+    } else {
+        std::cout << "FAILED\n";
+    }
+    fout.close();
+
 
     std::cout << "*** TEST DONE ***\n";
 }
