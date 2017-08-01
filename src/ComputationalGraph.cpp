@@ -48,21 +48,18 @@ Graph::~Graph()
 Hypergraph::Hyperedges Graph::deviceClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::DeviceId, name);
-    result.erase(Graph::DeviceId);
     return result;
 }
 
 Hypergraph::Hyperedges Graph::interfaceClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::InterfaceId, name);
-    result.erase(Graph::InterfaceId);
     return result;
 }
 
 Hypergraph::Hyperedges Graph::busClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::BusId, name);
-    result.erase(Graph::BusId);
     return result;
 }
 
