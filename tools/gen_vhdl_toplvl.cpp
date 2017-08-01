@@ -12,12 +12,12 @@ int main(void)
     // * Create a toplvl vhdl skeleton for each device
 
     // Test case:
-    auto hypergraph = YAML::LoadFile("hwgraph.yml").as<Hypergraph*>();
+    auto hypergraph = YAML::LoadFile("demo.yml").as<Hypergraph*>();
     Conceptgraph cgraph(*hypergraph);
     CommonConceptGraph ccgraph(cgraph);
     Hardware::Computational::Graph hwgraph(ccgraph);
     // Find specific device(s) in the set of all devices
-    auto deviceIds = hwgraph.devices();
+    auto deviceIds = hwgraph.deviceClasses();
 
     // For each of these devices
     for (auto deviceId : deviceIds)
@@ -31,8 +31,8 @@ int main(void)
         std::cout << "entity " << device->label() << " is\n";
         std::cout << "port(\n";
         std::cout << "-- interfaces here --\n";
-        // The interfaces of the device are all children of the device also being an interface
-        auto myInterfaceIds = hwgraph.intersect(hwgraph.childrenOf(deviceId), hwgraph.interfaces());
+        // Handle interfaces
+        auto myInterfaceIds = hwgraph.interfaces(deviceId);
         for (auto interfaceId : myInterfaceIds)
         {
             auto interface = hwgraph.get(interfaceId);

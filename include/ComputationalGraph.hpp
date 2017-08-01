@@ -32,7 +32,6 @@ class Graph : public CommonConceptGraph
         static const unsigned DeviceId;
         static const unsigned InterfaceId;
         static const unsigned BusId;
-
         // Ids for identifiing IsA, HasA and Connects
         static const unsigned IsAId;
         static const unsigned HasAId;
@@ -47,15 +46,27 @@ class Graph : public CommonConceptGraph
         void createMainConcepts();
 
         // Factory functions
+        // NOTE: These create classes, not individuals
         unsigned createDevice(const std::string& name="Device");
         unsigned createInterface(const std::string& name="Interface");
         unsigned createBus(const std::string& name="Bus");
+        // NOTE: These create individuals from classes
+        unsigned instantiateDevice(const unsigned superId, const std::string& name="");
+        Hyperedges instantiateInterface(const unsigned deviceId, const std::string name="");
+        unsigned instantiateBus(const unsigned superId, const Hyperedges& interfaceIds, const std::string& name="");
 
         // Queries
-        Hyperedges devices(const std::string& name="");
-        Hyperedges interfaces(const std::string& name="");
-        Hyperedges busses(const std::string& name="");
+        // NOTE: These return the subclasses of the corresponding main concepts
+        Hyperedges deviceClasses(const std::string& name="");
+        Hyperedges interfaceClasses(const std::string& name="");
+        Hyperedges busClasses(const std::string& name="");
+        // NOTE: These return the individuals of all the corresponding classes
+        Hyperedges devices(const std::string& name="", const std::string& className="");
+        Hyperedges interfaces(const unsigned deviceId=0, const std::string& name="", const std::string& className=""); //< If a deviceId is given, only its interfaces are returned
+        Hyperedges busses(const std::string& name="", const std::string& className="");
 
+        // Facts
+        // NOTE: These will work for both, CLASSES and INSTANCES
         // Global functions for devices & interfaces
         unsigned has(const unsigned deviceId, const unsigned interfaceId);
         unsigned has(const Hyperedges& devices, const Hyperedges& interfaces);

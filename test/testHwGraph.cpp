@@ -45,22 +45,22 @@ int main(void)
     hwgraph.connects(busId, secondId);
     hwgraph.connects(busId, fourthId);
 
-    std::cout << "> Query devices\n";
-    auto devsId = hwgraph.devices();
+    std::cout << "> Query deviceClasses\n";
+    auto devsId = hwgraph.deviceClasses();
     for (auto setId : devsId)
     {
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
     }
 
-    std::cout << "> Query interfaces\n";
-    auto ifsId = hwgraph.interfaces();
+    std::cout << "> Query interfaceClasses\n";
+    auto ifsId = hwgraph.interfaceClasses();
     for (auto setId : ifsId)
     {
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
     }
 
-    std::cout << "> Query busses\n";
-    auto bussesId = hwgraph.busses();
+    std::cout << "> Query busClasses\n";
+    auto bussesId = hwgraph.busClasses();
     for (auto setId : bussesId)
     {
         std::cout << setId << " " << hwgraph.get(setId)->label() << std::endl;
@@ -96,7 +96,10 @@ int main(void)
     unsigned lvdsSC = hwgraph.createInterface("LVDS");
     unsigned usbSC = hwgraph.createInterface("USB");
     unsigned ndlcomSC = hwgraph.createBus("NDLCom");
-    unsigned usbBusSC = hwgraph.createBus("USB"); // Test if a second concept with the same name can be created
+    unsigned usbBusSC = hwgraph.createBus("USB");
+    // Define bus domains
+    hwgraph.connects(usbBusSC, usbSC);
+    hwgraph.connects(ndlcomSC, lvdsSC);
 
     // Create interfaces
     // NOTE: The following reads as "Every mdaq2 HAS a LVDS1 and a LVDS2 interface of class LVDS"
@@ -114,22 +117,17 @@ int main(void)
 
     // The hardware graph now contains the models of the devices we want to instantiate and connect in the following
     // We start with instantiating one device, the interfaces we want to connect
-    // NOTE: The following reads as "There is a TEST BOARD of type mdaq2 with an LVDS1 interface of type LVDS"
-    unsigned mdaqId = hwgraph.instantiateFrom(mdaqSC, "TEST BOARD");
-    hwgraph.has(mdaqId, hwgraph.instantiateFrom(lvdsSC, "LVDS1")); // Note, that we dont need LVDS2!
-    unsigned spineId = hwgraph.instantiateFrom(spineSC);
-    hwgraph.has(Hypergraph::Hyperedges{spineId}, Hypergraph::Hyperedges{hwgraph.instantiateFrom(lvdsSC, "LVDS1"), hwgraph.instantiateFrom(lvdsSC, "LVDS2")});
-    unsigned convId = hwgraph.instantiateFrom(convSC);
-    hwgraph.has(Hypergraph::Hyperedges{convId}, Hypergraph::Hyperedges{hwgraph.instantiateFrom(lvdsSC, "LVDS1"), hwgraph.instantiateFrom(usbSC, "USB1")});
-    unsigned laptopId = hwgraph.instantiateFrom(pcSC, "My Laptop");
-    hwgraph.has(laptopId, hwgraph.instantiateFrom(usbSC, "/dev/ttyUSB0"));
+    // NOTE: The following reads as "There is a TEST BOARD of type mdaq2"
+    unsigned mdaqId = hwgraph.instantiateDevice(mdaqSC, "TEST BOARD");
+    unsigned spineId = hwgraph.instantiateDevice(spineSC);
+    unsigned convId = hwgraph.instantiateDevice(convSC);
+    unsigned laptopId = hwgraph.instantiateDevice(pcSC, "My Laptop");
 
     // We should now have the devices and the needed interfaces. It is time to connect them
-    // NOTE: The following reads as "There is a bus of type NDLCom which connects a CHILD of TEST BOARD called LVDS1 and a CHILD of spine_board calles LVDS1"
-    // FIXME: This is not sound. Actually we also have to check if this CHILD os TEST BOARD is also a CHILD of the superclass of TEST BOARD and also an interface!
-    hwgraph.connects(Hypergraph::Hyperedges{hwgraph.instantiateFrom(ndlcomSC)}, hwgraph.unite(hwgraph.childrenOf(mdaqId,"LVDS1"),hwgraph.childrenOf(spineId,"LVDS1")));
-    hwgraph.connects(Hypergraph::Hyperedges{hwgraph.instantiateFrom(ndlcomSC)}, hwgraph.unite(hwgraph.childrenOf(convId,"LVDS1"),hwgraph.childrenOf(spineId,"LVDS2")));
-    hwgraph.connects(Hypergraph::Hyperedges{hwgraph.instantiateFrom(usbBusSC)}, hwgraph.unite(hwgraph.childrenOf(convId,"USB1"),hwgraph.childrenOf(laptopId,"/dev/ttyUSB0")));
+    // NOTE: The following reads as "There is a bus of type NDLCom which connects a LVDS1 of TEST BOARD and LVDS1 of spine_board"
+    hwgraph.instantiateBus(ndlcomSC, hwgraph.unite(hwgraph.interfaces(mdaqId, "LVDS1"),hwgraph.interfaces(spineId,"LVDS1")));
+    hwgraph.instantiateBus(ndlcomSC, hwgraph.unite(hwgraph.interfaces(convId, "LVDS1"),hwgraph.interfaces(spineId,"LVDS2")));
+    hwgraph.instantiateBus(usbBusSC, hwgraph.unite(hwgraph.interfaces(convId, "USB1"),hwgraph.interfaces(laptopId,"/dev/ttyUSB0")));
 
     // We could now make the specific instances and the network they form PART-OF some X. This X would then represent all occurences of this setting/network.
 
