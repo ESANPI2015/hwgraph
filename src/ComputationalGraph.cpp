@@ -120,47 +120,32 @@ unsigned Graph::instantiateBus(const unsigned superId, const Hyperedges& interfa
 
 Hypergraph::Hyperedges Graph::devices(const std::string& name, const std::string& className)
 {
-    Hyperedges result;
     // Get all device classes
     Hyperedges classIds = deviceClasses(className);
-    // For each of them get the instances with the given name
-    for (auto classId : classIds)
-    {
-        result = unite(result, CommonConceptGraph::instancesOf(classId, name)); // TODO: Make instancesOf over Hyperedges
-    }
-    return result;
+    // ... and return all instances of them
+    return CommonConceptGraph::instancesOf(classIds, name);
 }
 
 Hypergraph::Hyperedges Graph::interfaces(const unsigned deviceId, const std::string& name, const std::string& className)
 {
-    Hyperedges result;
     // Get all interfaceClasses
     Hyperedges classIds = interfaceClasses(className);
-    // For each of them
-    for (auto classId : classIds)
-    {
-        // ... get the instances with the given name
-        result = unite(result, CommonConceptGraph::instancesOf(classId, name));
-    }
+    // ... get the instances with the given name
+    Hyperedges result = CommonConceptGraph::instancesOf(classIds, name);
     // then intersect it with the children of device (if given)
     if (deviceId)
     {
-        result = intersect(result, CommonConceptGraph::childrenOf(deviceId));
+        result = intersect(result, CommonConceptGraph::childrenOf(Hyperedges{deviceId}));
     }
     return result;
 }
 
 Hypergraph::Hyperedges Graph::busses(const std::string& name, const std::string& className)
 {
-    Hyperedges result;
     // Get all busClasses
     Hyperedges classIds = busClasses(className);
-    // For each of them get the instances with the given name
-    for (auto classId : classIds)
-    {
-        result = unite(result, CommonConceptGraph::instancesOf(classId, name));
-    }
-    return result;
+    // ... and return all instances of them
+    return CommonConceptGraph::instancesOf(classIds, name);
 }
 
 unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
