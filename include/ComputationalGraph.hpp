@@ -20,7 +20,15 @@ namespace Computational {
     If some X is a DEVICE then there exists a path of IS-A relations from X to DEVICE
 
     NOTE: The concepts are encoded by UNIQUE IDS. This makes them natural language independent.
-    
+
+    The devices are subclassed by the concept of PROCESSOR.
+    This class shall group all devices which are able to process data/execute algorithms.
+    Normally, this processor devices are PART-OF bigger devices which also host interface(s), power electronics etc.
+
+    PROCESSOR -- partOf --> DEVICE    
+
+    However, this encoding is optional and a network of connected processors is valid in itself.
+
 */
 
 class Graph;
@@ -30,12 +38,14 @@ class Graph : public CommonConceptGraph
     public:
         // Ids for identifiing devices, interfaces and busses
         static const unsigned DeviceId;
+        static const unsigned ProcessorId;
         static const unsigned InterfaceId;
         static const unsigned BusId;
         // Ids for identifiing IsA, HasA and Connects
         static const unsigned IsAId;
         static const unsigned HasAId;
         static const unsigned ConnectsId;
+        static const unsigned PartOfId;
 
         // Constructor/Destructor
         Graph();
@@ -48,6 +58,7 @@ class Graph : public CommonConceptGraph
         // Factory functions
         // NOTE: These create classes, not individuals
         unsigned createDevice(const std::string& name="Device");
+        unsigned createProcessor(const std::string& name="Processor");
         unsigned createInterface(const std::string& name="Interface");
         unsigned createBus(const std::string& name="Bus");
         // NOTE: These create individuals from classes
@@ -58,10 +69,12 @@ class Graph : public CommonConceptGraph
         // Queries
         // NOTE: These return the subclasses of the corresponding main concepts
         Hyperedges deviceClasses(const std::string& name="");
+        Hyperedges processorClasses(const std::string& name="");
         Hyperedges interfaceClasses(const std::string& name="");
         Hyperedges busClasses(const std::string& name="");
         // NOTE: These return the individuals of all the corresponding classes
         Hyperedges devices(const std::string& name="", const std::string& className="");
+        Hyperedges processors(const std::string& name="", const std::string& className="");
         Hyperedges interfaces(const unsigned deviceId=0, const std::string& name="", const std::string& className=""); //< If a deviceId is given, only its interfaces are returned
         Hyperedges busses(const std::string& name="", const std::string& className="");
 
@@ -73,6 +86,8 @@ class Graph : public CommonConceptGraph
         // Global functions for busses & interfaces
         unsigned connects(const unsigned busId, const unsigned interfaceId);
         unsigned connects(const Hyperedges& busses, const Hyperedges& interfaces);
+        // Global function to encode processor/device relationship
+        unsigned partOf(const Hyperedges& processorIds, const Hyperedges& deviceIds);
 };
 
 }

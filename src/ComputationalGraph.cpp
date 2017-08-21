@@ -9,16 +9,20 @@ namespace Computational {
 const unsigned Graph::InterfaceId = 1001;
 const unsigned Graph::BusId       = 1002;
 const unsigned Graph::DeviceId    = 1000;
+const unsigned Graph::ProcessorId = 1003;
 // Relation Concept Ids
 const unsigned Graph::IsAId      = CommonConceptGraph::IsAId;
 const unsigned Graph::HasAId     = 1004;
 const unsigned Graph::ConnectsId = 1005;
+const unsigned Graph::PartOfId   = 1006;
 
 // Graph
 void Graph::createMainConcepts()
 {
     // Create concepts
     Conceptgraph::create(Graph::DeviceId, "DEVICE");
+    Conceptgraph::create(Graph::ProcessorId, "PROCESSOR");
+    CommonConceptGraph::isA(Graph::ProcessorId, Graph::DeviceId);
     Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
     Conceptgraph::create(Graph::BusId, "BUS");
     // Define relations
@@ -27,6 +31,8 @@ void Graph::createMainConcepts()
     CommonConceptGraph::subrelationOf(Graph::HasAId, CommonConceptGraph::HasAId);
     Conceptgraph::relate(Graph::ConnectsId, Graph::BusId, Graph::InterfaceId, "CONNECTS");
     CommonConceptGraph::subrelationOf(Graph::ConnectsId, CommonConceptGraph::ConnectsId);
+    Conceptgraph::relate(Graph::PartOfId, Graph::ProcessorId, Graph::DeviceId, "PART-OF");
+    CommonConceptGraph::subrelationOf(Graph::PartOfId, CommonConceptGraph::PartOfId);
 }
 
 Graph::Graph()
@@ -45,6 +51,12 @@ Graph::~Graph()
 {
 }
 
+Hypergraph::Hyperedges Graph::processorClasses(const std::string& name)
+{
+    Hyperedges result = CommonConceptGraph::subclassesOf(Graph::ProcessorId, name);
+    return result;
+}
+
 Hypergraph::Hyperedges Graph::deviceClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::DeviceId, name);
@@ -61,6 +73,13 @@ Hypergraph::Hyperedges Graph::busClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::BusId, name);
     return result;
+}
+
+unsigned Graph::createProcessor(const std::string& name)
+{
+    unsigned a = create(name);
+    CommonConceptGraph::isA(a, Graph::ProcessorId);
+    return a;
 }
 
 unsigned Graph::createDevice(const std::string& name)
@@ -126,6 +145,14 @@ Hypergraph::Hyperedges Graph::devices(const std::string& name, const std::string
     return CommonConceptGraph::instancesOf(classIds, name);
 }
 
+Hypergraph::Hyperedges Graph::processors(const std::string& name, const std::string& className)
+{
+    // Get all processor classes
+    Hyperedges classIds = processorClasses(className);
+    // ... and return all instances of them
+    return CommonConceptGraph::instancesOf(classIds, name);
+}
+
 Hypergraph::Hyperedges Graph::interfaces(const unsigned deviceId, const std::string& name, const std::string& className)
 {
     // Get all interfaceClasses
@@ -170,7 +197,7 @@ unsigned Graph::connects(unsigned busId, unsigned interfaceId)
 
 unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
 {
-    // A bus instance can connect interface instances, whereas a bus class can connect interface classes
+    // A bus instance can connect interface instances (network), whereas a bus class can connect interface classes (compatibility)
     Hyperedges fromIds = intersect(this->busses(), busses);
     Hyperedges toIds = intersect(this->interfaces(), interfaces);
     if (fromIds.size() && toIds.size())
@@ -179,6 +206,16 @@ unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
     toIds = intersect(interfaceClasses(), interfaces);
     if (fromIds.size() && toIds.size())
         return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::ConnectsId);
+    return 0;
+}
+
+unsigned Graph::partOf(const Hyperedges& processorIds, const Hyperedges& deviceIds)
+{
+    // A device class or instance can contain processor instances, but not processor classes
+    Hyperedges toIds = unite(intersect(this->devices(), deviceIds), intersect(deviceClasses(), deviceIds));
+    Hyperedges fromIds = intersect(this->processors(), processorIds);
+    if (fromIds.size() && toIds.size())
+        return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::PartOfId);
     return 0;
 }
 
