@@ -51,93 +51,122 @@ Graph::~Graph()
 {
 }
 
-Hypergraph::Hyperedges Graph::processorClasses(const std::string& name)
+Hyperedges Graph::processorClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::ProcessorId, name);
     return result;
 }
 
-Hypergraph::Hyperedges Graph::deviceClasses(const std::string& name)
+Hyperedges Graph::deviceClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::DeviceId, name);
     return result;
 }
 
-Hypergraph::Hyperedges Graph::interfaceClasses(const std::string& name)
+Hyperedges Graph::interfaceClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::InterfaceId, name);
     return result;
 }
 
-Hypergraph::Hyperedges Graph::busClasses(const std::string& name)
+Hyperedges Graph::busClasses(const std::string& name)
 {
     Hyperedges result = CommonConceptGraph::subclassesOf(Graph::BusId, name);
     return result;
 }
 
-unsigned Graph::createProcessor(const std::string& name)
+Hyperedges Graph::createProcessor(const std::string& name)
 {
-    unsigned a = create(name);
+    Hyperedges a = create(name);
     CommonConceptGraph::isA(a, Graph::ProcessorId);
     return a;
 }
 
-unsigned Graph::createDevice(const std::string& name)
+Hyperedges Graph::createDevice(const std::string& name)
 {
-    unsigned a = create(name);
+    Hyperedges a = create(name);
     CommonConceptGraph::isA(a, Graph::DeviceId);
     return a;
 }
 
-unsigned Graph::createInterface(const std::string& name)
+Hyperedges Graph::createInterface(const std::string& name)
 {
-    unsigned a = create(name);
+    Hyperedges a = create(name);
     CommonConceptGraph::isA(a, Graph::InterfaceId);
     return a;
 }
 
-unsigned Graph::createBus(const std::string& name)
+Hyperedges Graph::createBus(const std::string& name)
 {
-    unsigned a = create(name);
+    Hyperedges a = create(name);
     CommonConceptGraph::isA(a, Graph::BusId);
     return a;
 }
 
-Hypergraph::Hyperedges Graph::instantiateInterface(const unsigned deviceId, const std::string name)
+Hyperedges Graph::instantiateInterface(const Hyperedges& deviceIds, const std::string name)
 {
     Hyperedges result;
-    Hyperedges interfacesOfDev = interfaces(deviceId, name);
-    // Get all subrelationsOf INSTANCE-OF
-    Hyperedges subRels = CommonConceptGraph::subrelationsOf(CommonConceptGraph::InstanceOfId);
-    // Get all factsOf these subrelations
-    Hyperedges facts = CommonConceptGraph::factsOf(subRels);
-    for (unsigned interfaceId : interfacesOfDev)
+    for (unsigned deviceId : deviceIds)
     {
-        // Get superclass of interface
-        Hyperedges relsFromSub = Conceptgraph::relationsFrom(interfaceId);
-        Hyperedges relevantRels = Hypergraph::intersect(relsFromSub, facts);
-        Hyperedges superIds = Hypergraph::to(relevantRels);
-        // TODO: What if superIds > 1?
-        result.insert(CommonConceptGraph::instantiateFrom(*(superIds.begin()), get(interfaceId)->label()));
+        Hyperedges interfacesOfDev = interfaces(deviceId, name);
+        // Get all subrelationsOf INSTANCE-OF
+        Hyperedges subRels = CommonConceptGraph::subrelationsOf(CommonConceptGraph::InstanceOfId);
+        // Get all factsOf these subrelations
+        Hyperedges facts = CommonConceptGraph::factsOf(subRels);
+        for (unsigned interfaceId : interfacesOfDev)
+        {
+            // Get superclass of interface
+            Hyperedges relsFromSub = Conceptgraph::relationsFrom(interfaceId);
+            Hyperedges relevantRels = intersect(relsFromSub, facts);
+            Hyperedges superIds = Hypergraph::to(relevantRels);
+            // TODO: What if superIds > 1?
+            Hyperedges interfaceInst = CommonConceptGraph::instantiateFrom(superIds, get(interfaceId)->label());
+            result.insert(interfaceInst.begin(), interfaceInst.end());
+        }
     }
     return result;
 }
 
-unsigned Graph::instantiateDevice(const unsigned superId, const std::string& name)
+Hyperedges Graph::instantiateInterface(const unsigned deviceId, const std::string name)
 {
-    unsigned id = CommonConceptGraph::instantiateFrom(superId, name);
-    has(Hyperedges{id}, instantiateInterface(superId)); // TODO: Really?
-    return id;
+    return instantiateInterface(Hyperedges{deviceId}, name);
 }
 
-unsigned Graph::instantiateBus(const unsigned superId, const Hyperedges& interfaceIds, const std::string& name)
+Hyperedges Graph::instantiateDevice(const Hyperedges& superIds, const std::string& name)
 {
-    unsigned id = CommonConceptGraph::instantiateFrom(superId, name);
-    connects(Hyperedges{id}, interfaceIds);
-    return id;
+    Hyperedges result;
+    for (unsigned superId : superIds)
+    {
+        Hyperedges id = CommonConceptGraph::instantiateFrom(superId, name);
+        has(id, instantiateInterface(superId)); // TODO: Really?
+        result = unite(result, id);
+    }
+    return result;
 }
 
-Hypergraph::Hyperedges Graph::devices(const std::string& name, const std::string& className)
+Hyperedges Graph::instantiateDevice(const unsigned superId, const std::string& name)
+{
+    return instantiateDevice(Hyperedges{superId}, name);
+}
+
+Hyperedges Graph::instantiateBus(const Hyperedges& superIds, const Hyperedges& interfaceIds, const std::string& name)
+{
+    Hyperedges result;
+    for (unsigned superId : superIds)
+    {
+        Hyperedges id = CommonConceptGraph::instantiateFrom(superId, name);
+        connects(Hyperedges{id}, interfaceIds);
+        result = unite(result, id);
+    }
+    return result;
+}
+
+Hyperedges Graph::instantiateBus(const unsigned superId, const Hyperedges& interfaceIds, const std::string& name)
+{
+    return instantiateBus(Hyperedges{superId}, interfaceIds, name);
+}
+
+Hyperedges Graph::devices(const std::string& name, const std::string& className)
 {
     // Get all device classes
     Hyperedges classIds = deviceClasses(className);
@@ -145,7 +174,7 @@ Hypergraph::Hyperedges Graph::devices(const std::string& name, const std::string
     return CommonConceptGraph::instancesOf(classIds, name);
 }
 
-Hypergraph::Hyperedges Graph::processors(const std::string& name, const std::string& className)
+Hyperedges Graph::processors(const std::string& name, const std::string& className)
 {
     // Get all processor classes
     Hyperedges classIds = processorClasses(className);
@@ -153,21 +182,28 @@ Hypergraph::Hyperedges Graph::processors(const std::string& name, const std::str
     return CommonConceptGraph::instancesOf(classIds, name);
 }
 
-Hypergraph::Hyperedges Graph::interfaces(const unsigned deviceId, const std::string& name, const std::string& className)
+Hyperedges Graph::interfaces(const Hyperedges deviceIds, const std::string& name, const std::string& className)
 {
     // Get all interfaceClasses
     Hyperedges classIds = interfaceClasses(className);
     // ... get the instances with the given name
     Hyperedges result = CommonConceptGraph::instancesOf(classIds, name);
-    // then intersect it with the children of device (if given)
-    if (deviceId)
+    if (deviceIds.size())
     {
-        result = intersect(result, CommonConceptGraph::childrenOf(Hyperedges{deviceId}));
+        result = intersect(result, CommonConceptGraph::childrenOf(deviceIds));
     }
     return result;
 }
 
-Hypergraph::Hyperedges Graph::busses(const std::string& name, const std::string& className)
+Hyperedges Graph::interfaces(const unsigned deviceId, const std::string& name, const std::string& className)
+{
+    if (deviceId)
+        return interfaces(Hyperedges{deviceId}, name, className);
+    else
+        return interfaces(Hyperedges(), name, className);
+}
+
+Hyperedges Graph::busses(const std::string& name, const std::string& className)
 {
     // Get all busClasses
     Hyperedges classIds = busClasses(className);
@@ -175,27 +211,27 @@ Hypergraph::Hyperedges Graph::busses(const std::string& name, const std::string&
     return CommonConceptGraph::instancesOf(classIds, name);
 }
 
-unsigned Graph::has(unsigned deviceId, unsigned interfaceId)
+Hyperedges Graph::has(unsigned deviceId, unsigned interfaceId)
 {
     return has(Hyperedges{deviceId}, Hyperedges{interfaceId});
 }
 
-unsigned Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
+Hyperedges Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
 {
     // A device instance or class can only have a interface instance
     Hyperedges fromIds = unite(intersect(this->devices(), devices), intersect(deviceClasses(),devices));
     Hyperedges toIds = intersect(this->interfaces(), interfaces);
     if (fromIds.size() && toIds.size())
         return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::HasAId);
-    return 0;
+    return Hyperedges();
 }
 
-unsigned Graph::connects(unsigned busId, unsigned interfaceId)
+Hyperedges Graph::connects(unsigned busId, unsigned interfaceId)
 {
     return connects(Hyperedges{busId}, Hyperedges{interfaceId});
 }
 
-unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
+Hyperedges Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
 {
     // A bus instance can connect interface instances (network), whereas a bus class can connect interface classes (compatibility)
     Hyperedges fromIds = intersect(this->busses(), busses);
@@ -206,17 +242,17 @@ unsigned Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
     toIds = intersect(interfaceClasses(), interfaces);
     if (fromIds.size() && toIds.size())
         return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::ConnectsId);
-    return 0;
+    return Hyperedges();
 }
 
-unsigned Graph::partOf(const Hyperedges& processorIds, const Hyperedges& deviceIds)
+Hyperedges Graph::partOf(const Hyperedges& processorIds, const Hyperedges& deviceIds)
 {
     // A device class or instance can contain processor instances, but not processor classes
     Hyperedges toIds = unite(intersect(this->devices(), deviceIds), intersect(deviceClasses(), deviceIds));
     Hyperedges fromIds = intersect(this->processors(), processorIds);
     if (fromIds.size() && toIds.size())
         return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::PartOfId);
-    return 0;
+    return Hyperedges();
 }
 
 }

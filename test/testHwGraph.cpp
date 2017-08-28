@@ -89,45 +89,45 @@ int main(void)
     std::cout << "> Create real world example\n";
     // Create classes
     // NOTE: The following reads as "Every mdaq2 is a DEVICE"
-    unsigned mdaqSC = hwgraph.createDevice("mdaq2");
-    unsigned pcSC = hwgraph.createDevice("PC");
-    unsigned spineSC = hwgraph.createDevice("spine_board");
-    unsigned convSC = hwgraph.createDevice("LVDS2USB");
-    unsigned lvdsSC = hwgraph.createInterface("LVDS");
-    unsigned usbSC = hwgraph.createInterface("USB");
-    unsigned ndlcomSC = hwgraph.createBus("NDLCom");
-    unsigned usbBusSC = hwgraph.createBus("USB");
+    Hyperedges mdaqSC = hwgraph.createDevice("mdaq2");
+    Hyperedges pcSC = hwgraph.createDevice("PC");
+    Hyperedges spineSC = hwgraph.createDevice("spine_board");
+    Hyperedges convSC = hwgraph.createDevice("LVDS2USB");
+    Hyperedges lvdsSC = hwgraph.createInterface("LVDS");
+    Hyperedges usbSC = hwgraph.createInterface("USB");
+    Hyperedges ndlcomSC = hwgraph.createBus("NDLCom");
+    Hyperedges usbBusSC = hwgraph.createBus("USB");
     // Define bus domains
     hwgraph.connects(usbBusSC, usbSC);
     hwgraph.connects(ndlcomSC, lvdsSC);
 
     // Create interfaces
     // NOTE: The following reads as "Every mdaq2 HAS a LVDS1 and a LVDS2 interface of class LVDS"
-    unsigned id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
-    unsigned id2 = hwgraph.instantiateFrom(lvdsSC, "LVDS2");
-    hwgraph.has(Hypergraph::Hyperedges{mdaqSC}, Hypergraph::Hyperedges{id1,id2});
+    Hyperedges id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
+    Hyperedges id2 = hwgraph.instantiateFrom(lvdsSC, "LVDS2");
+    hwgraph.has(mdaqSC, unite(id1,id2));
     id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
     id2 = hwgraph.instantiateFrom(lvdsSC, "LVDS2");
-    hwgraph.has(Hypergraph::Hyperedges{spineSC}, Hypergraph::Hyperedges{id1,id2});
+    hwgraph.has(spineSC, unite(id1,id2));
     id1 = hwgraph.instantiateFrom(lvdsSC, "LVDS1");
     id2 = hwgraph.instantiateFrom(usbSC, "USB1");
-    hwgraph.has(Hypergraph::Hyperedges{convSC}, Hypergraph::Hyperedges{id1,id2});
+    hwgraph.has(convSC, unite(id1,id2));
     id2 = hwgraph.instantiateFrom(usbSC, "/dev/ttyUSB0");
     hwgraph.has(pcSC, id2);
 
     // The hardware graph now contains the models of the devices we want to instantiate and connect in the following
     // We start with instantiating one device, the interfaces we want to connect
     // NOTE: The following reads as "There is a TEST BOARD of type mdaq2"
-    unsigned mdaqId = hwgraph.instantiateDevice(mdaqSC, "TEST BOARD");
-    unsigned spineId = hwgraph.instantiateDevice(spineSC);
-    unsigned convId = hwgraph.instantiateDevice(convSC);
-    unsigned laptopId = hwgraph.instantiateDevice(pcSC, "My Laptop");
+    Hyperedges mdaqId = hwgraph.instantiateDevice(mdaqSC, "TEST BOARD");
+    Hyperedges spineId = hwgraph.instantiateDevice(spineSC);
+    Hyperedges convId = hwgraph.instantiateDevice(convSC);
+    Hyperedges laptopId = hwgraph.instantiateDevice(pcSC, "My Laptop");
 
     // We should now have the devices and the needed interfaces. It is time to connect them
     // NOTE: The following reads as "There is a bus of type NDLCom which connects a LVDS1 of TEST BOARD and LVDS1 of spine_board"
-    hwgraph.instantiateBus(ndlcomSC, hwgraph.unite(hwgraph.interfaces(mdaqId, "LVDS1"),hwgraph.interfaces(spineId,"LVDS1")));
-    hwgraph.instantiateBus(ndlcomSC, hwgraph.unite(hwgraph.interfaces(convId, "LVDS1"),hwgraph.interfaces(spineId,"LVDS2")));
-    hwgraph.instantiateBus(usbBusSC, hwgraph.unite(hwgraph.interfaces(convId, "USB1"),hwgraph.interfaces(laptopId,"/dev/ttyUSB0")));
+    hwgraph.instantiateBus(ndlcomSC, unite(hwgraph.interfaces(mdaqId, "LVDS1"),hwgraph.interfaces(spineId,"LVDS1")));
+    hwgraph.instantiateBus(ndlcomSC, unite(hwgraph.interfaces(convId, "LVDS1"),hwgraph.interfaces(spineId,"LVDS2")));
+    hwgraph.instantiateBus(usbBusSC, unite(hwgraph.interfaces(convId, "USB1"),hwgraph.interfaces(laptopId,"/dev/ttyUSB0")));
 
     // We could now make the specific instances and the network they form PART-OF some X. This X would then represent all occurences of this setting/network.
 
