@@ -6,15 +6,15 @@ namespace Computational {
 
 // DICTIONARY
 // Concept Ids
-const unsigned Graph::InterfaceId = 1001;
-const unsigned Graph::BusId       = 1002;
-const unsigned Graph::DeviceId    = 1000;
-const unsigned Graph::ProcessorId = 1003;
+const UniqueId Graph::InterfaceId = "Hardware::Computational::Graph::Interface";
+const UniqueId Graph::BusId       = "Hardware::Computational::Graph::Bus";
+const UniqueId Graph::DeviceId    = "Hardware::Computational::Graph::Device";
+const UniqueId Graph::ProcessorId = "Hardware::Computational::Graph::Processor";
 // Relation Concept Ids
-const unsigned Graph::IsAId      = CommonConceptGraph::IsAId;
-const unsigned Graph::HasAId     = 1004;
-const unsigned Graph::ConnectsId = 1005;
-const unsigned Graph::PartOfId   = 1006;
+const UniqueId Graph::IsAId      = CommonConceptGraph::IsAId;
+const UniqueId Graph::HasAId     = "Hardware::Computational::Graph::HasA";
+const UniqueId Graph::ConnectsId = "Hardware::Computational::Graph::Connects";
+const UniqueId Graph::PartOfId   = "Hardware::Computational::Graph::PartOf";
 
 // Graph
 void Graph::createMainConcepts()
@@ -27,11 +27,11 @@ void Graph::createMainConcepts()
     Conceptgraph::create(Graph::BusId, "BUS");
     // Define relations
     // These are subrelations of the general HAS-A and CONNECTS relations
-    Conceptgraph::relate(Graph::HasAId, Graph::DeviceId, Graph::InterfaceId, "HAS-A");
+    Conceptgraph::relate(Graph::HasAId, Hyperedges{Graph::DeviceId}, Hyperedges{Graph::InterfaceId}, "HAS-A");
     CommonConceptGraph::subrelationOf(Graph::HasAId, CommonConceptGraph::HasAId);
-    Conceptgraph::relate(Graph::ConnectsId, Graph::BusId, Graph::InterfaceId, "CONNECTS");
+    Conceptgraph::relate(Graph::ConnectsId, Hyperedges{Graph::BusId}, Hyperedges{Graph::InterfaceId}, "CONNECTS");
     CommonConceptGraph::subrelationOf(Graph::ConnectsId, CommonConceptGraph::ConnectsId);
-    Conceptgraph::relate(Graph::PartOfId, Graph::ProcessorId, Graph::DeviceId, "PART-OF");
+    Conceptgraph::relate(Graph::PartOfId, Hyperedges{Graph::ProcessorId}, Hyperedges{Graph::DeviceId}, "PART-OF");
     CommonConceptGraph::subrelationOf(Graph::PartOfId, CommonConceptGraph::PartOfId);
 }
 
@@ -106,17 +106,17 @@ Hyperedges Graph::createBus(const std::string& name)
 Hyperedges Graph::instantiateInterface(const Hyperedges& deviceIds, const std::string name)
 {
     Hyperedges result;
-    for (unsigned deviceId : deviceIds)
+    for (UniqueId deviceId : deviceIds)
     {
         Hyperedges interfacesOfDev = interfaces(deviceId, name);
         // Get all subrelationsOf INSTANCE-OF
         Hyperedges subRels = CommonConceptGraph::subrelationsOf(CommonConceptGraph::InstanceOfId);
         // Get all factsOf these subrelations
         Hyperedges facts = CommonConceptGraph::factsOf(subRels);
-        for (unsigned interfaceId : interfacesOfDev)
+        for (UniqueId interfaceId : interfacesOfDev)
         {
             // Get superclass of interface
-            Hyperedges relsFromSub = Conceptgraph::relationsFrom(interfaceId);
+            Hyperedges relsFromSub = Conceptgraph::relationsFrom(Hyperedges{interfaceId});
             Hyperedges relevantRels = intersect(relsFromSub, facts);
             Hyperedges superIds = Hypergraph::to(relevantRels);
             // TODO: What if superIds > 1?
@@ -127,7 +127,7 @@ Hyperedges Graph::instantiateInterface(const Hyperedges& deviceIds, const std::s
     return result;
 }
 
-Hyperedges Graph::instantiateInterface(const unsigned deviceId, const std::string name)
+Hyperedges Graph::instantiateInterface(const UniqueId deviceId, const std::string name)
 {
     return instantiateInterface(Hyperedges{deviceId}, name);
 }
@@ -135,7 +135,7 @@ Hyperedges Graph::instantiateInterface(const unsigned deviceId, const std::strin
 Hyperedges Graph::instantiateDevice(const Hyperedges& superIds, const std::string& name)
 {
     Hyperedges result;
-    for (unsigned superId : superIds)
+    for (UniqueId superId : superIds)
     {
         Hyperedges id = CommonConceptGraph::instantiateFrom(superId, name);
         has(id, instantiateInterface(superId)); // TODO: Really?
@@ -144,7 +144,7 @@ Hyperedges Graph::instantiateDevice(const Hyperedges& superIds, const std::strin
     return result;
 }
 
-Hyperedges Graph::instantiateDevice(const unsigned superId, const std::string& name)
+Hyperedges Graph::instantiateDevice(const UniqueId superId, const std::string& name)
 {
     return instantiateDevice(Hyperedges{superId}, name);
 }
@@ -152,7 +152,7 @@ Hyperedges Graph::instantiateDevice(const unsigned superId, const std::string& n
 Hyperedges Graph::instantiateBus(const Hyperedges& superIds, const Hyperedges& interfaceIds, const std::string& name)
 {
     Hyperedges result;
-    for (unsigned superId : superIds)
+    for (UniqueId superId : superIds)
     {
         Hyperedges id = CommonConceptGraph::instantiateFrom(superId, name);
         connects(Hyperedges{id}, interfaceIds);
@@ -161,7 +161,7 @@ Hyperedges Graph::instantiateBus(const Hyperedges& superIds, const Hyperedges& i
     return result;
 }
 
-Hyperedges Graph::instantiateBus(const unsigned superId, const Hyperedges& interfaceIds, const std::string& name)
+Hyperedges Graph::instantiateBus(const UniqueId superId, const Hyperedges& interfaceIds, const std::string& name)
 {
     return instantiateBus(Hyperedges{superId}, interfaceIds, name);
 }
@@ -195,12 +195,12 @@ Hyperedges Graph::interfaces(const Hyperedges deviceIds, const std::string& name
     return result;
 }
 
-Hyperedges Graph::interfaces(const unsigned deviceId, const std::string& name, const std::string& className)
+Hyperedges Graph::interfaces(const UniqueId deviceId, const std::string& name, const std::string& className)
 {
-    if (deviceId)
-        return interfaces(Hyperedges{deviceId}, name, className);
-    else
+    if (deviceId.empty())
         return interfaces(Hyperedges(), name, className);
+    else
+        return interfaces(Hyperedges{deviceId}, name, className);
 }
 
 Hyperedges Graph::busses(const std::string& name, const std::string& className)
@@ -211,7 +211,7 @@ Hyperedges Graph::busses(const std::string& name, const std::string& className)
     return CommonConceptGraph::instancesOf(classIds, name);
 }
 
-Hyperedges Graph::has(unsigned deviceId, unsigned interfaceId)
+Hyperedges Graph::has(UniqueId deviceId, UniqueId interfaceId)
 {
     return has(Hyperedges{deviceId}, Hyperedges{interfaceId});
 }
@@ -226,7 +226,7 @@ Hyperedges Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
     return Hyperedges();
 }
 
-Hyperedges Graph::connects(unsigned busId, unsigned interfaceId)
+Hyperedges Graph::connects(UniqueId busId, UniqueId interfaceId)
 {
     return connects(Hyperedges{busId}, Hyperedges{interfaceId});
 }

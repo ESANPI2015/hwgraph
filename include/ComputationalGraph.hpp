@@ -37,15 +37,15 @@ class Graph : public CommonConceptGraph
 {
     public:
         // Ids for identifiing devices, interfaces and busses
-        static const unsigned DeviceId;
-        static const unsigned ProcessorId;
-        static const unsigned InterfaceId;
-        static const unsigned BusId;
+        static const UniqueId DeviceId;
+        static const UniqueId ProcessorId;
+        static const UniqueId InterfaceId;
+        static const UniqueId BusId;
         // Ids for identifiing IsA, HasA and Connects
-        static const unsigned IsAId;
-        static const unsigned HasAId;
-        static const unsigned ConnectsId;
-        static const unsigned PartOfId;
+        static const UniqueId IsAId;
+        static const UniqueId HasAId;
+        static const UniqueId ConnectsId;
+        static const UniqueId PartOfId;
 
         // Constructor/Destructor
         Graph();
@@ -62,9 +62,9 @@ class Graph : public CommonConceptGraph
         Hyperedges createInterface(const std::string& name="Interface");
         Hyperedges createBus(const std::string& name="Bus");
         // NOTE: These create individuals from classes
-        Hyperedges instantiateDevice(const unsigned superId, const std::string& name="");
-        Hyperedges instantiateInterface(const unsigned deviceId, const std::string name="");
-        Hyperedges instantiateBus(const unsigned superId, const Hyperedges& interfaceIds, const std::string& name="");
+        Hyperedges instantiateDevice(const UniqueId superId, const std::string& name="");
+        Hyperedges instantiateInterface(const UniqueId deviceId, const std::string name="");
+        Hyperedges instantiateBus(const UniqueId superId, const Hyperedges& interfaceIds, const std::string& name="");
         Hyperedges instantiateDevice(const Hyperedges& superId, const std::string& name="");
         Hyperedges instantiateInterface(const Hyperedges& deviceId, const std::string name="");
         Hyperedges instantiateBus(const Hyperedges& superId, const Hyperedges& interfaceIds, const std::string& name="");
@@ -78,17 +78,17 @@ class Graph : public CommonConceptGraph
         // NOTE: These return the individuals of all the corresponding classes
         Hyperedges devices(const std::string& name="", const std::string& className="");
         Hyperedges processors(const std::string& name="", const std::string& className="");
-        Hyperedges interfaces(const unsigned deviceId=0, const std::string& name="", const std::string& className=""); //< If a deviceId is given, only its interfaces are returned
+        Hyperedges interfaces(const UniqueId deviceId="", const std::string& name="", const std::string& className=""); //< If a deviceId is given, only its interfaces are returned
         Hyperedges interfaces(const Hyperedges deviceIds, const std::string& name="", const std::string& className=""); //< If a deviceId is given, only its interfaces are returned
         Hyperedges busses(const std::string& name="", const std::string& className="");
 
         // Facts
         // NOTE: These will work for both, CLASSES and INSTANCES
         // Global functions for devices & interfaces
-        Hyperedges has(const unsigned deviceId, const unsigned interfaceId);
+        Hyperedges has(const UniqueId deviceId, const UniqueId interfaceId);
         Hyperedges has(const Hyperedges& devices, const Hyperedges& interfaces);
         // Global functions for busses & interfaces
-        Hyperedges connects(const unsigned busId, const unsigned interfaceId);
+        Hyperedges connects(const UniqueId busId, const UniqueId interfaceId);
         Hyperedges connects(const Hyperedges& busses, const Hyperedges& interfaces);
         // Global function to encode processor/device relationship
         Hyperedges partOf(const Hyperedges& processorIds, const Hyperedges& deviceIds);
