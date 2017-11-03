@@ -55,6 +55,11 @@ target_link_libraries(gen_vhdl_toplvl hwgraph)
 install(TARGETS gen_vhdl_toplvl
 RUNTIME DESTINATION bin)
 
+add_executable(def_hardware_graph tools/def_hardware_graph.cpp)
+target_link_libraries(def_hardware_graph hwgraph)
+install(TARGETS def_hardware_graph
+RUNTIME DESTINATION bin)
+
 # pkg-config, to be installed:
 configure_file(${PROJECT_NAME}.pc.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
