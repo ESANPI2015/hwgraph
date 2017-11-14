@@ -30,17 +30,18 @@ int main(void)
 
     // Upper relations
     auto devHasInterfaceId = hwgraph.relate(devClassId, ifClassId, "system_modelling::graph_basics::Has");
-    auto devInstanceOfTemplateId = hwgraph.relate(devClassId, devClassId, "system_modelling::graph_basics::InstanceOf");
     auto busConnectsInterfaceId = hwgraph.relate(busClassId, ifClassId, "system_modelling::graph_basics::ConnectsTo");
     auto devIsPartOfId = hwgraph.relate(devClassId, networkClassId, "system_modelling::graph_basics::PartOf");
     auto devContainsId = hwgraph.relate(networkClassId, devClassId, "system_modelling::graph_basics::Contains");
-    //auto interfaceHasUniqueTypeId = hwgraph.relate(interfaceClassId, interfaceTypeId, "system_modelling::graph_basics::HasUnique");
+    auto instanceOfTemplateId = hwgraph.relate(Hyperedges{Conceptgraph::IsConceptId}, Hyperedges{Conceptgraph::IsConceptId}, "system_modelling::graph_basics::InstanceOf");
 
     // Refer new relations to our common and/or special relations!
     hwgraph.subrelationOf(devHasInterfaceId, Hyperedges{Hardware::Computational::Graph::HasAId});
     hwgraph.subrelationOf(busConnectsInterfaceId, Hyperedges{Hardware::Computational::Graph::ConnectsId});
+    // Special case: instanceOf in system_modelling is a mix of both, CommonConceptGraph::InstanceOf and CommonConceptGraph::IsA
+    hwgraph.subrelationOf(instanceOfTemplateId, Hyperedges{CommonConceptGraph::InstanceOfId});
+    hwgraph.subrelationOf(instanceOfTemplateId, Hyperedges{CommonConceptGraph::IsAId});
     hwgraph.subrelationOf(devIsPartOfId, Hyperedges{Hardware::Computational::Graph::PartOfId});
-    hwgraph.subrelationOf(devInstanceOfTemplateId, Hyperedges{CommonConceptGraph::InstanceOfId});
     // TODO: What do we do about Contains?
 
     // Now the language def by relations
