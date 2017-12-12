@@ -15,12 +15,6 @@ if(NOT TARGET hypergraph)
 endif(NOT TARGET hypergraph)
 
 find_package(PkgConfig)
-#pkg_check_modules(YAML REQUIRED yaml-cpp)
-#include_directories(${YAML_INCLUDE_DIRS})
-#link_directories(${YAML_LIBRARY_DIRS})
-#add_definitions(-DYAML_SUPPORT ${YAML_CFLAGS_OTHER})
-#set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} yaml-cpp)
-
 pkg_check_modules(hwgraph_PKGCONFIG REQUIRED
     hypergraph yaml-cpp
     )
@@ -45,24 +39,14 @@ target_link_libraries(hwgraph
     ${hwgraph_PKGCONFIG_STATIC_LIBRARIES}
     )
 
-add_executable(testHwGraph test/testHwGraph.cpp)
-target_link_libraries(testHwGraph hwgraph)
-install(TARGETS testHwGraph
+add_executable(dbg-gen-vhdl-toplvl src/gen_vhdl_toplvl.cpp)
+target_link_libraries(dbg-gen-vhdl-toplvl hwgraph)
+install(TARGETS dbg-gen-vhdl-toplvl
 RUNTIME DESTINATION bin)
 
-add_executable(gen_vhdl_toplvl tools/gen_vhdl_toplvl.cpp)
-target_link_libraries(gen_vhdl_toplvl hwgraph)
-install(TARGETS gen_vhdl_toplvl
-RUNTIME DESTINATION bin)
-
-add_executable(def_hardware_graph tools/def_hardware_graph.cpp)
-target_link_libraries(def_hardware_graph hwgraph)
-install(TARGETS def_hardware_graph
-RUNTIME DESTINATION bin)
-
-add_executable(import_hardware_graph tools/import_hardware_graph.cpp)
-target_link_libraries(import_hardware_graph hwgraph)
-install(TARGETS import_hardware_graph
+add_executable(dbg-import-hw-model src/import_hardware_graph.cpp)
+target_link_libraries(dbg-import-hw-model hwgraph)
+install(TARGETS dbg-import-hw-model
 RUNTIME DESTINATION bin)
 
 # pkg-config, to be installed:
