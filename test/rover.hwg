@@ -1,0 +1,76 @@
+name: hwTest
+nodes:
+- id: 1
+  name: Control
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: PORT1
+    - id: 1
+      type: NDLCOM
+      name: PORT2
+    - id: 2
+      type: NDLCOM
+      name: PORT3
+    - id: 3
+      type: NDLCOM
+      name: PORT4
+- id: 2
+  name: FLJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: PORT1
+- id: 3
+  name: FRJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: PORT1
+- id: 4
+  name: RLJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: PORT1
+- id: 5
+  name: RRJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: PORT1
+
+edges:
+- id: 1
+  name: to_fl
+  nodes:
+  - id: 1
+    port: 0
+  - id: 2
+    port: 0
+- id: 2
+  name: to_fr
+  nodes:
+  - id: 1
+    port: 1
+  - id: 3
+    port: 0
+- id: 3
+  name: to_rl
+  nodes:
+  - id: 1
+    port: 2
+  - id: 4
+    port: 0
+- id: 4
+  name: to_rr
+  nodes:
+  - id: 1
+    port: 3
+  - id: 5
+    port: 0

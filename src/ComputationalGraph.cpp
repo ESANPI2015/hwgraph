@@ -1,259 +1,102 @@
-#include "ComputationalGraph.hpp"
+#include "ComputationDomain.hpp"
+#include <yaml-cpp/yaml.h>
 #include <iostream>
+#include <sstream>
 
-namespace Hardware {
-namespace Computational {
+namespace Simple {
 
-// DICTIONARY
-// Concept Ids
-const UniqueId Graph::InterfaceId = "Hardware::Computational::Graph::Interface";
-const UniqueId Graph::BusId       = "Hardware::Computational::Graph::Bus";
-const UniqueId Graph::DeviceId    = "Hardware::Computational::Graph::Device";
-const UniqueId Graph::ProcessorId = "Hardware::Computational::Graph::Processor";
-// Relation Concept Ids
-const UniqueId Graph::IsAId      = CommonConceptGraph::IsAId;
-const UniqueId Graph::HasAId     = "Hardware::Computational::Graph::HasA";
-const UniqueId Graph::ConnectsId = "Hardware::Computational::Graph::Connects";
-const UniqueId Graph::PartOfId   = "Hardware::Computational::Graph::PartOf";
-
-// Graph
-void Graph::createMainConcepts()
+void Computation::setupMetaModel()
 {
-    // Create concepts
-    Conceptgraph::create(Graph::DeviceId, "DEVICE");
-    Conceptgraph::create(Graph::ProcessorId, "PROCESSOR");
-    CommonConceptGraph::isA(Graph::ProcessorId, Graph::DeviceId);
-    Conceptgraph::create(Graph::InterfaceId, "INTERFACE");
-    Conceptgraph::create(Graph::BusId, "BUS");
-    // Define relations
-    // These are subrelations of the general HAS-A and CONNECTS relations
-    Conceptgraph::relate(Graph::HasAId, Hyperedges{Graph::DeviceId}, Hyperedges{Graph::InterfaceId}, "HAS-A");
-    CommonConceptGraph::subrelationOf(Graph::HasAId, CommonConceptGraph::HasAId);
-    Conceptgraph::relate(Graph::ConnectsId, Hyperedges{Graph::BusId}, Hyperedges{Graph::InterfaceId}, "CONNECTS");
-    CommonConceptGraph::subrelationOf(Graph::ConnectsId, CommonConceptGraph::ConnectsId);
-    Conceptgraph::relate(Graph::PartOfId, Hyperedges{Graph::ProcessorId}, Hyperedges{Graph::DeviceId}, "PART-OF");
-    CommonConceptGraph::subrelationOf(Graph::PartOfId, CommonConceptGraph::PartOfId);
+    createProcessor("Simple::Computation::Processor::Conventional", "CONVENTIONAL");
+    createProcessor("Simple::Computation::Processor::Fpga", "FPGA");
+    createInterface("Simple::Computation::Interface::NDLComLVDS", "NDLCOM");
+    createInterface("Simple::Computation::Interface::Input", "SOURCE");
+    createInterface("Simple::Computation::Interface::Output", "SINK");
+    Hyperedges busIfs;
+    busIfs = unite(busIfs, instatiateFrom(Hyperedges{"Simple::Computation::Interface::NDLCom"}, "A"));
+    busIfs = unite(busIfs, instatiateFrom(Hyperedges{"Simple::Computation::Interface::NDLCom"}, "B"));
+    hasInterface(createBus("Simple::Computation::Bus::NDLComOverLVDS", "NDLCOM@LVDS"), busIfs);
+    createNetwork("Simple::Computation::Subgraph", "SUBGRAPH");
 }
 
-Graph::Graph()
-: CommonConceptGraph()
+Computation::Computation()
 {
-    createMainConcepts();
+    setupMetaModel();
 }
 
-Graph::Graph(CommonConceptGraph& A)
-: CommonConceptGraph(A)
+Computation::Computation(const Hypergraph& base)
+: Hardware::Computational::Network(base)
 {
-    createMainConcepts();
+    setupMetaModel();
 }
 
-Graph::~Graph()
+Computation::~Computation()
 {
 }
 
-Hyperedges Graph::processorClasses(const std::string& name)
+std::string Computation::domainSpecificExport(const UniqueId& uid)
 {
-    Hyperedges result = CommonConceptGraph::subclassesOf(Graph::ProcessorId, name);
-    return result;
+    return std::string();
 }
 
-Hyperedges Graph::deviceClasses(const std::string& name)
+bool Computation::domainSpecificImport(const std::string& serialized)
 {
-    Hyperedges result = CommonConceptGraph::subclassesOf(Graph::DeviceId, name);
-    return result;
-}
-
-Hyperedges Graph::interfaceClasses(const std::string& name)
-{
-    Hyperedges result = CommonConceptGraph::subclassesOf(Graph::InterfaceId, name);
-    return result;
-}
-
-Hyperedges Graph::busClasses(const std::string& name)
-{
-    Hyperedges result = CommonConceptGraph::subclassesOf(Graph::BusId, name);
-    return result;
-}
-
-Hyperedges Graph::createProcessor(const std::string& name)
-{
-    Hyperedges a = create(name);
-    CommonConceptGraph::isA(a, Graph::ProcessorId);
-    return a;
-}
-
-Hyperedges Graph::createDevice(const std::string& name)
-{
-    Hyperedges a = create(name);
-    CommonConceptGraph::isA(a, Graph::DeviceId);
-    return a;
-}
-
-Hyperedges Graph::createInterface(const std::string& name)
-{
-    Hyperedges a = create(name);
-    CommonConceptGraph::isA(a, Graph::InterfaceId);
-    return a;
-}
-
-Hyperedges Graph::createBus(const std::string& name)
-{
-    Hyperedges a = create(name);
-    CommonConceptGraph::isA(a, Graph::BusId);
-    return a;
-}
-
-Hyperedges Graph::instantiateInterface(const Hyperedges& deviceIds, const std::string name)
-{
-    Hyperedges result;
-    for (UniqueId deviceId : deviceIds)
+    std::map< std::string,Hyperedges > old2new;
+    std::map< std::string, std::map< std::string, Hyperedges> > old2newPort;
+    YAML::Node spec = YAML::Load(serialized);
+    if (!spec["name"].IsDefined())
+        return false;
+    const std::string& name(spec["name"].as<std::string>());
+    if (!spec["nodes"].IsDefined())
+        return false;
+    const YAML::Node& nodesYAML(spec["nodes"]); // FIXME: Better naming: processors, devices
+    for (YAML::Node::const_iterator nit = nodesYAML.begin(); nit != nodesYAML.end(); ++nit)
     {
-        Hyperedges interfacesOfDev = interfaces(deviceId, name);
-        // Get all subrelationsOf INSTANCE-OF
-        Hyperedges subRels = CommonConceptGraph::subrelationsOf(CommonConceptGraph::InstanceOfId);
-        // Get all factsOf these subrelations
-        Hyperedges facts = CommonConceptGraph::factsOf(subRels);
-        for (UniqueId interfaceId : interfacesOfDev)
+        const YAML::Node& nodeYAML(*nit);
+        const std::string& nodeId(nodeYAML["id"].as<std::string>()); // FIXME: We might have to PRESERVE this id ... it could be an NDLCom DeviceId!!!
+        const std::string& nodeName(nodeYAML["name"].as<std::string>());
+        const std::string& nodeType(nodeYAML["type"].as<std::string>());
+        // Instantiate processor
+        Hyperedges uid(instantiateComponent(processorClasses(type), name));
+        old2new[id] = uid;
+
+        // Handle interfaces
+        const YAML::Node& portsYAML(nodeYAML["ports"]); // FIXME: better naming: interfaces
+        if (portsYAML.IsDefined())
         {
-            // Get superclass of interface
-            Hyperedges relsFromSub = Conceptgraph::relationsFrom(Hyperedges{interfaceId});
-            Hyperedges relevantRels = intersect(relsFromSub, facts);
-            Hyperedges superIds = Hypergraph::to(relevantRels);
-            // TODO: What if superIds > 1?
-            Hyperedges interfaceInst = CommonConceptGraph::instantiateFrom(superIds, get(interfaceId)->label());
-            result.insert(interfaceInst.begin(), interfaceInst.end());
+            Hyperedges interfaceUids;
+            for (YAML::Node::const_iterator pit = portsYAML.begin(); pit != portsYAML.end(); ++pit)
+            {
+                const YAML::Node& portYAML(*pit);
+                const std::string& portId(portYAML["id"].as<std::string>());
+                const std::string& portName(portYAML["name"].as<std::string>());
+                const std::string& portType(portYAML["type"].as<std::string>());
+                // Instantiate interface
+                Hyperedges interfaceUid(instatiateFrom(interfaceClasses(portType), portName));
+                old2newPort[id][portId] = interfaceUid;
+            }
+            hasInterface(uid, interfaceUids);
         }
     }
-    return result;
-}
-
-Hyperedges Graph::instantiateInterface(const UniqueId deviceId, const std::string name)
-{
-    return instantiateInterface(Hyperedges{deviceId}, name);
-}
-
-Hyperedges Graph::instantiateDevice(const Hyperedges& superIds, const std::string& name)
-{
-    Hyperedges result;
-    for (UniqueId superId : superIds)
+    const YAML::Node& edgesYAML(spec["edges"]);
+    if (edgesYAML.IsDefined())
     {
-        Hyperedges id = CommonConceptGraph::instantiateFrom(superId, name);
-        has(id, instantiateInterface(superId)); // TODO: Really?
-        result = unite(result, id);
+        for (YAML::Node::const_iterator eit = edgesYAML.begin(); eit != edgesYAML.end(); ++eit)
+        {
+            const YAML::Node& edgeYAML(*eit);
+            const std::string& edgeId(edgeYAML["id"].as<std::string>());
+            const std::string& edgeName(edgeYAML["name"].as<std::string>());
+            const YAML::Node& edgeNodesYAML(edgeYAML["nodes"]); // FIXME: better naming: endpoints
+            if (!edgeNodesYAML.IsDefined())
+                return false;
+            for (YAML::Node::const_iterator enit = edgeNodesYAML.begin(); enit != edgeNodesYAML.end(); ++enit)
+            {
+                const YAML::Node& edgeNodeYAML(*enit);
+                const std::string& nodeId(edgeNodeYAML["id"].as<std::string>());
+                const std::string& portId(edgeNodeYAML["port"].as<std::string>()); // FIXME: better naming: nodeId, portId
+            }
+        }
     }
-    return result;
 }
 
-Hyperedges Graph::instantiateDevice(const UniqueId superId, const std::string& name)
-{
-    return instantiateDevice(Hyperedges{superId}, name);
-}
-
-Hyperedges Graph::instantiateBus(const Hyperedges& superIds, const Hyperedges& interfaceIds, const std::string& name)
-{
-    Hyperedges result;
-    for (UniqueId superId : superIds)
-    {
-        Hyperedges id = CommonConceptGraph::instantiateFrom(superId, name);
-        connects(Hyperedges{id}, interfaceIds);
-        result = unite(result, id);
-    }
-    return result;
-}
-
-Hyperedges Graph::instantiateBus(const UniqueId superId, const Hyperedges& interfaceIds, const std::string& name)
-{
-    return instantiateBus(Hyperedges{superId}, interfaceIds, name);
-}
-
-Hyperedges Graph::devices(const std::string& name, const std::string& className)
-{
-    // Get all device classes
-    Hyperedges classIds = deviceClasses(className);
-    // ... and return all instances of them
-    return CommonConceptGraph::instancesOf(classIds, name);
-}
-
-Hyperedges Graph::processors(const std::string& name, const std::string& className)
-{
-    // Get all processor classes
-    Hyperedges classIds = processorClasses(className);
-    // ... and return all instances of them
-    return CommonConceptGraph::instancesOf(classIds, name);
-}
-
-Hyperedges Graph::interfaces(const Hyperedges deviceIds, const std::string& name, const std::string& className)
-{
-    // Get all interfaceClasses
-    Hyperedges classIds = interfaceClasses(className);
-    // ... get the instances with the given name
-    Hyperedges result = CommonConceptGraph::instancesOf(classIds, name);
-    if (deviceIds.size())
-    {
-        result = intersect(result, CommonConceptGraph::childrenOf(deviceIds));
-    }
-    return result;
-}
-
-Hyperedges Graph::interfaces(const UniqueId deviceId, const std::string& name, const std::string& className)
-{
-    if (deviceId.empty())
-        return interfaces(Hyperedges(), name, className);
-    else
-        return interfaces(Hyperedges{deviceId}, name, className);
-}
-
-Hyperedges Graph::busses(const std::string& name, const std::string& className)
-{
-    // Get all busClasses
-    Hyperedges classIds = busClasses(className);
-    // ... and return all instances of them
-    return CommonConceptGraph::instancesOf(classIds, name);
-}
-
-Hyperedges Graph::has(UniqueId deviceId, UniqueId interfaceId)
-{
-    return has(Hyperedges{deviceId}, Hyperedges{interfaceId});
-}
-
-Hyperedges Graph::has(const Hyperedges& devices, const Hyperedges& interfaces)
-{
-    // A device instance or class can only have a interface instance
-    Hyperedges fromIds = unite(intersect(this->devices(), devices), intersect(deviceClasses(),devices));
-    Hyperedges toIds = intersect(this->interfaces(), interfaces);
-    if (fromIds.size() && toIds.size())
-        return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::HasAId);
-    return Hyperedges();
-}
-
-Hyperedges Graph::connects(UniqueId busId, UniqueId interfaceId)
-{
-    return connects(Hyperedges{busId}, Hyperedges{interfaceId});
-}
-
-Hyperedges Graph::connects(const Hyperedges& busses, const Hyperedges& interfaces)
-{
-    // A bus instance can connect interface instances (network), whereas a bus class can connect interface classes (compatibility)
-    Hyperedges fromIds = intersect(this->busses(), busses);
-    Hyperedges toIds = intersect(this->interfaces(), interfaces);
-    if (fromIds.size() && toIds.size())
-        return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::ConnectsId);
-    fromIds = intersect(busClasses(), busses);
-    toIds = intersect(interfaceClasses(), interfaces);
-    if (fromIds.size() && toIds.size())
-        return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::ConnectsId);
-    return Hyperedges();
-}
-
-Hyperedges Graph::partOf(const Hyperedges& processorIds, const Hyperedges& deviceIds)
-{
-    // A device class or instance can contain processor instances, but not processor classes
-    Hyperedges toIds = unite(intersect(this->devices(), deviceIds), intersect(deviceClasses(), deviceIds));
-    Hyperedges fromIds = intersect(this->processors(), processorIds);
-    if (fromIds.size() && toIds.size())
-        return CommonConceptGraph::relateFrom(fromIds, toIds, Graph::PartOfId);
-    return Hyperedges();
-}
-
-}
 }
