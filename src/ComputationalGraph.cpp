@@ -1,4 +1,4 @@
-#include "ComputationDomain.hpp"
+#include "ComputationalGraph.hpp"
 #include <yaml-cpp/yaml.h>
 #include <iostream>
 #include <sstream>
@@ -12,10 +12,7 @@ void Computation::setupMetaModel()
     createInterface("Simple::Computation::Interface::NDLComLVDS", "NDLCOM");
     createInterface("Simple::Computation::Interface::Input", "SOURCE");
     createInterface("Simple::Computation::Interface::Output", "SINK");
-    Hyperedges busIfs;
-    busIfs = unite(busIfs, instatiateFrom(Hyperedges{"Simple::Computation::Interface::NDLCom"}, "A"));
-    busIfs = unite(busIfs, instatiateFrom(Hyperedges{"Simple::Computation::Interface::NDLCom"}, "B"));
-    hasInterface(createBus("Simple::Computation::Bus::NDLComOverLVDS", "NDLCOM@LVDS"), busIfs);
+    createBus("Simple::Computation::Bus::NDLComOverLVDS", "NDLCOM@LVDS");
     createNetwork("Simple::Computation::Subgraph", "SUBGRAPH");
 }
 
@@ -57,8 +54,9 @@ bool Computation::domainSpecificImport(const std::string& serialized)
         const std::string& nodeName(nodeYAML["name"].as<std::string>());
         const std::string& nodeType(nodeYAML["type"].as<std::string>());
         // Instantiate processor
-        Hyperedges uid(instantiateComponent(processorClasses(type), name));
-        old2new[id] = uid;
+        Hyperedges uid(instantiateComponent(processorClasses(nodeType), nodeName));
+        old2new[nodeId] = uid;
+        std::cout << "Instantiated " << nodeName << " of type " << nodeType << "\n";
 
         // Handle interfaces
         const YAML::Node& portsYAML(nodeYAML["ports"]); // FIXME: better naming: interfaces
@@ -72,8 +70,10 @@ bool Computation::domainSpecificImport(const std::string& serialized)
                 const std::string& portName(portYAML["name"].as<std::string>());
                 const std::string& portType(portYAML["type"].as<std::string>());
                 // Instantiate interface
-                Hyperedges interfaceUid(instatiateFrom(interfaceClasses(portType), portName));
-                old2newPort[id][portId] = interfaceUid;
+                Hyperedges interfaceUid(instantiateFrom(interfaceClasses(portType), portName));
+                std::cout << "Instantiated interface " << portName << " of type " << portType << "\n";
+                old2newPort[nodeId][portId] = interfaceUid;
+                interfaceUids = unite(interfaceUids, interfaceUid);
             }
             hasInterface(uid, interfaceUids);
         }
@@ -89,14 +89,28 @@ bool Computation::domainSpecificImport(const std::string& serialized)
             const YAML::Node& edgeNodesYAML(edgeYAML["nodes"]); // FIXME: better naming: endpoints
             if (!edgeNodesYAML.IsDefined())
                 return false;
+            // Instantiate bus
+            Hyperedges busUid(instantiateFrom(Hyperedges{"Simple::Computation::Bus::NDLComOverLVDS"}, edgeName));
+            std::cout << "Instantiated bus " << edgeName << "\n";
+
+            // Create interfaces
+            Hyperedges interfaceUids;
             for (YAML::Node::const_iterator enit = edgeNodesYAML.begin(); enit != edgeNodesYAML.end(); ++enit)
             {
                 const YAML::Node& edgeNodeYAML(*enit);
                 const std::string& nodeId(edgeNodeYAML["id"].as<std::string>());
                 const std::string& portId(edgeNodeYAML["port"].as<std::string>()); // FIXME: better naming: nodeId, portId
+                // Instantiate bus interface
+                Hyperedges interfaceUid(instantiateFrom(Hyperedges{"Simple::Computation::Interface::NDLComLVDS"}, nodeId+portId));
+                std::cout << "Instantiated bus interface " << nodeId+portId << "\n";
+                // Connect it to the other interface
+                std::cout << connectInterface(interfaceUid, old2newPort[nodeId][portId]) << std::endl;
+                interfaceUids = unite(interfaceUids, interfaceUid);
             }
+            hasInterface(busUid, interfaceUids);
         }
     }
+    return true;
 }
 
 }

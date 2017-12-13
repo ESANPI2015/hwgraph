@@ -15,11 +15,11 @@ static struct option long_options[] = {
 void usage (const char *myName)
 {
     std::cout << "Usage:\n";
-    std::cout << myName << " <yaml-file-in> <lang-spec-file> <yaml-file-out>\n\n";
+    std::cout << myName << " <yaml-file-in> <yaml-file-out>\n\n";
     std::cout << "Options:\n";
     std::cout << "--help\t" << "Show usage\n";
     std::cout << "\nExample:\n";
-    std::cout << myName << " hardware_graph.yml def_hardware_graph.yml imported.yml\n";
+    std::cout << myName << " hardware_graph.yml imported.yml\n";
 }
 
 // This tool takes a language definition and tries to interpret a given domain specific format given that definition
@@ -46,7 +46,7 @@ int main (int argc, char **argv)
         }
     }
 
-    if ((argc - optind) < 3)
+    if ((argc - optind) < 2)
     {
         usage(argv[0]);
         return 1;
@@ -54,83 +54,32 @@ int main (int argc, char **argv)
 
     // Set vars
     std::string fileNameIn(argv[optind]);
-    std::string langSpecIn(argv[optind+1]);
-    std::string fileNameOut(argv[optind+2]);
-    Hypergraph* hypergraph = YAML::LoadFile(langSpecIn).as<Hypergraph*>();
-    Conceptgraph cgraph(*hypergraph);
-    CommonConceptGraph ccgraph(cgraph);
-    Hardware::Computational::Graph hwgraph(ccgraph);
+    std::string fileNameOut(argv[optind+1]);
 
-    YAML::Node import = YAML::LoadFile(fileNameIn);
-    const YAML::Node& nodes(import["nodes"]);
-    if (nodes.IsDefined())
-    {
-        std::map<UniqueId, Hyperedges> old2new;
-        for (auto it = nodes.begin(); it != nodes.end(); it++)
-        {
-            const YAML::Node node(*it);
-            UniqueId id = node["id"].as<UniqueId>();
-            std::string label = node["label"].as<std::string>();
-            std::string type = node["type"].as<std::string>();
-            // First: Find the superclass
-            Hyperedges super = hwgraph.find(type);
-            if (!super.size())
-            {
-                std::cout << "Missing super class " << type << " for concept " << label << "\n";
-                continue;
-            }
-            // Second:
-            // system_modelling only knows instances but no subclasses
-            // Unfortunately, we now have to fix here some inconsistencies:
-            // PortConnections have to be INSTANTIATED
-            Hyperedges sub;
-            if (type == "system_modelling::task_graph::PortConnection")
-            {
-                sub = hwgraph.instantiateFrom(super, label);
-            } else {
-                sub = hwgraph.create(label);
-            }
-            hwgraph.isA(sub, super);
-            old2new[id] = sub;
-        }
-        const YAML::Node& edges(import["edges"]);
-        for (auto it = edges.begin(); it != edges.end(); it++)
-        {
-            const YAML::Node edge(*it);
-            UniqueId id = edge["id"].as<UniqueId>();
-            std::string label = edge["label"].as<std::string>();
-            std::string type = edge["type"].as<std::string>();
-            UniqueId fromId = edge["fromId"].as<UniqueId>();
-            UniqueId toId = edge["toId"].as<UniqueId>();
-            // First: Find the superclass
-            Hyperedges super = hwgraph.relations(type);
-            if (!super.size())
-            {
-                std::cout << "Missing super class " << type << " for relation " << label << "\n";
-                continue;
-            }
-            // Second: Instantiate from that superclass
-            Hyperedges sub = hwgraph.relateFrom(old2new[fromId], old2new[toId], super);
-            if (!sub.size())
-            {
-                std::cout << "Could not relate " << old2new[fromId] << " to " << old2new[toId] << "\n";
-                continue;
-            }
-            Hyperedges edgeId = subtract(subtract(sub, old2new[fromId]), old2new[toId]);
-            hwgraph.get(*edgeId.begin())->updateLabel(label);
-        }
+    // Load file and convert to string
+    std::ifstream fin;
+    fin.open(fileNameIn);
+    if(!fin.good()) {
+        std::cout << "READ FAILED\n";
     }
+    std::stringstream ss;
+    ss << fin.rdbuf();
 
-    // Store modified graph
+    // Call domain specific import
+    Simple::Computation sc;
+    sc.domainSpecificImport(ss.str());
+
+    // Store imported graph
     std::ofstream fout;
     fout.open(fileNameOut);
     if(!fout.good()) {
-        std::cout << "FAILED\n";
+        std::cout << "WRITE FAILED\n";
     }
     YAML::Node test;
-    test = static_cast<Hypergraph*>(&hwgraph);
+    test = static_cast<Hypergraph*>(&sc);
     fout << test;
     fout.close();
+    fin.close();
 
     return 0;
 }

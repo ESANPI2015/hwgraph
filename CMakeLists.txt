@@ -10,13 +10,17 @@ SET(ENV{PKG_CONFIG_PATH}
     )
 
 # Yes, we have to add the directory at least
+if(NOT TARGET domaingraph)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../domaingraph domaingraph)
+endif(NOT TARGET domaingraph)
 if(NOT TARGET hypergraph)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../hypergraph hypergraph)
 endif(NOT TARGET hypergraph)
 
 find_package(PkgConfig)
+
 pkg_check_modules(hwgraph_PKGCONFIG REQUIRED
-    hypergraph yaml-cpp
+    hypergraph domaingraph yaml-cpp
     )
 
 include_directories(${hwgraph_PKGCONFIG_INCLUDE_DIRS})
@@ -39,10 +43,10 @@ target_link_libraries(hwgraph
     ${hwgraph_PKGCONFIG_STATIC_LIBRARIES}
     )
 
-add_executable(dbg-gen-vhdl-toplvl src/gen_vhdl_toplvl.cpp)
-target_link_libraries(dbg-gen-vhdl-toplvl hwgraph)
-install(TARGETS dbg-gen-vhdl-toplvl
-RUNTIME DESTINATION bin)
+#add_executable(dbg-gen-vhdl-toplvl src/gen_vhdl_toplvl.cpp)
+#target_link_libraries(dbg-gen-vhdl-toplvl hwgraph)
+#install(TARGETS dbg-gen-vhdl-toplvl
+#RUNTIME DESTINATION bin)
 
 add_executable(dbg-import-hw-model src/import_hardware_graph.cpp)
 target_link_libraries(dbg-import-hw-model hwgraph)
