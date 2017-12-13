@@ -53,6 +53,11 @@ target_link_libraries(dbg-import-hw-model hwgraph)
 install(TARGETS dbg-import-hw-model
 RUNTIME DESTINATION bin)
 
+add_executable(dbg-export-hw-model src/export_hardware_graph.cpp)
+target_link_libraries(dbg-export-hw-model hwgraph)
+install(TARGETS dbg-export-hw-model
+RUNTIME DESTINATION bin)
+
 # pkg-config, to be installed:
 configure_file(${PROJECT_NAME}.pc.in ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
