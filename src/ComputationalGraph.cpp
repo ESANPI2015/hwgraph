@@ -31,6 +31,33 @@ Computation::~Computation()
 {
 }
 
+std::string Computation::labelFromIdAndName(const unsigned id, const std::string& name)
+{
+    return labelFromIdAndName(std::to_string(id), name);
+}
+
+std::string Computation::labelFromIdAndName(const std::string& id, const std::string& name)
+{
+    return name + "_" + id;
+}
+
+unsigned Computation::idFromLabel(const std::string& label)
+{
+    std::string id;
+    std::size_t pos = label.rfind("_");
+    if (pos != std::string::npos)
+    {
+        id = label.substr(pos+1);
+    }
+    return id.empty() ? 0 : std::stoul(id);
+}
+
+std::string Computation::nameFromLabel(const std::string& label)
+{
+    std::size_t pos = label.rfind("_");
+    return label.substr(0,pos);
+}
+
 std::string Computation::domainSpecificExport(const UniqueId& uid)
 {
     std::map< UniqueId,unsigned > unique2nodeId;
@@ -44,7 +71,6 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
     Hyperedges partsOfNet(componentsOf(Hyperedges{uid}));
     Hyperedges busses;
     YAML::Node nodesYAML(spec["nodes"]);
-    unsigned nodeId = 1;
     for (const UniqueId& partUid : partsOfNet)
     {
         YAML::Node nodeYAML;
@@ -64,7 +90,6 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
         // Handle interfaces
         YAML::Node portsYAML(nodeYAML["ports"]);
         Hyperedges interfaceUids(interfacesOf(Hyperedges{partUid}));
-        unsigned interfaceId = 0;
         for (const UniqueId& interfaceUid : interfaceUids)
         {
             Hyperedges superClasses2(instancesOf(Hyperedges{interfaceUid}, "", TraversalDirection::DOWN));
@@ -74,24 +99,25 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
                 continue;
             }
             YAML::Node portYAML;
-            portYAML["id"] = interfaceId;
-            portYAML["name"] = get(interfaceUid)->label();
+            const unsigned portId(idFromLabel(get(interfaceUid)->label()));
+            portYAML["id"] = portId;
+            portYAML["name"] = nameFromLabel(get(interfaceUid)->label());
             portYAML["type"] = get(*superClasses2.begin())->label();
             portsYAML.push_back(portYAML);
-            unique2portId[interfaceUid] = interfaceId++;
+            unique2portId[interfaceUid] = portId;
         }
 
         // Store node
+        const unsigned nodeId(idFromLabel(get(partUid)->label()));
         nodeYAML["id"] = nodeId;
-        nodeYAML["name"] = get(partUid)->label();
+        nodeYAML["name"] = nameFromLabel(get(partUid)->label());
         nodeYAML["type"] = get(*superClasses.begin())->label();
         nodesYAML.push_back(nodeYAML);
-        unique2nodeId[partUid] = nodeId++;
+        unique2nodeId[partUid] = nodeId;
     }
 
     // Store connections
     YAML::Node edgesYAML(spec["edges"]);
-    unsigned busId = 1;
     for (const UniqueId& busUid : busses)
     {
         YAML::Node edgeYAML;
@@ -107,8 +133,8 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
             edgeNodeYAML["port"] = unique2portId[*otherInterfaceUids.begin()];
             edgeNodesYAML.push_back(edgeNodeYAML);
         }
-        edgeYAML["id"] = busId++;
-        edgeYAML["name"] = get(busUid)->label();
+        edgeYAML["id"] = idFromLabel(get(busUid)->label());
+        edgeYAML["name"] = nameFromLabel(get(busUid)->label());
         edgesYAML.push_back(edgeYAML);
     }
 
@@ -137,9 +163,9 @@ bool Computation::domainSpecificImport(const std::string& serialized)
         const std::string& nodeName(nodeYAML["name"].as<std::string>());
         const std::string& nodeType(nodeYAML["type"].as<std::string>());
         // Instantiate processor
-        Hyperedges uid(instantiateComponent(processorClasses(nodeType), nodeName));
+        Hyperedges uid(instantiateComponent(processorClasses(nodeType), labelFromIdAndName(nodeId,nodeName)));
         old2new[nodeId] = uid;
-        std::cout << "Instantiated " << nodeName << " of type " << nodeType << "\n";
+        std::cout << "Instantiated " << labelFromIdAndName(nodeId,nodeName) << " of type " << nodeType << "\n";
         partsOfNet = unite(partsOfNet, uid);
 
         // Handle interfaces
@@ -154,8 +180,8 @@ bool Computation::domainSpecificImport(const std::string& serialized)
                 const std::string& portName(portYAML["name"].as<std::string>());
                 const std::string& portType(portYAML["type"].as<std::string>());
                 // Instantiate interface
-                Hyperedges interfaceUid(instantiateFrom(interfaceClasses(portType), portName));
-                std::cout << "Instantiated interface " << portName << " of type " << portType << "\n";
+                Hyperedges interfaceUid(instantiateFrom(interfaceClasses(portType), labelFromIdAndName(portId, portName)));
+                std::cout << "Instantiated interface " << labelFromIdAndName(portId, portName) << " of type " << portType << "\n";
                 old2newPort[nodeId][portId] = interfaceUid;
                 interfaceUids = unite(interfaceUids, interfaceUid);
             }
@@ -175,8 +201,8 @@ bool Computation::domainSpecificImport(const std::string& serialized)
             if (!edgeNodesYAML.IsDefined())
                 return false;
             // Instantiate bus
-            Hyperedges busUid(instantiateFrom(Hyperedges{"Simple::Computation::Bus::NDLComOverLVDS"}, edgeName));
-            std::cout << "Instantiated bus " << edgeName << "\n";
+            Hyperedges busUid(instantiateFrom(Hyperedges{"Simple::Computation::Bus::NDLComOverLVDS"}, labelFromIdAndName(edgeId, edgeName)));
+            std::cout << "Instantiated bus " << labelFromIdAndName(edgeId, edgeName) << "\n";
             partsOfNet = unite(partsOfNet, busUid);
 
             // Create interfaces
