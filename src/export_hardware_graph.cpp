@@ -1,5 +1,5 @@
 #include "ComputationalGraph.hpp"
-#include "HyperedgeYAML.hpp"
+#include "HypergraphYAML.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -57,8 +57,8 @@ int main (int argc, char **argv)
     std::string fileNameOut(argv[optind+1]);
 
     // Load file
-    Hypergraph* hg = YAML::LoadFile(fileNameIn).as<Hypergraph*>();
-    Simple::Computation sc(*hg);
+    Hypergraph hg(YAML::LoadFile(fileNameIn).as<Hypergraph>());
+    Simple::Computation sc(hg);
 
     // Call domain specific export
     std::size_t pos(fileNameOut.rfind("."));
@@ -71,6 +71,7 @@ int main (int argc, char **argv)
     fout.open(fileNameOut);
     if(!fout.good()) {
         std::cout << "WRITE FAILED\n";
+        return 2;
     }
     fout << result;
     fout.close();

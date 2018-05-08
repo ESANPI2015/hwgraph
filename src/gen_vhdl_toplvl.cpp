@@ -1,5 +1,5 @@
 #include "ComputationalGraph.hpp"
-#include "HyperedgeYAML.hpp"
+#include "HypergraphYAML.hpp"
 
 #include <iostream>
 #include <cassert>
@@ -12,8 +12,8 @@ int main(void)
     // * Create a toplvl vhdl skeleton for each device
 
     // Test case:
-    auto hypergraph = YAML::LoadFile("demo.yml").as<Hypergraph*>();
-    Conceptgraph cgraph(*hypergraph);
+    Hypergraph hypergraph(YAML::LoadFile("demo.yml").as<Hypergraph>());
+    Conceptgraph cgraph(hypergraph);
     CommonConceptGraph ccgraph(cgraph);
     Hardware::Computational::Graph hwgraph(ccgraph);
     // Find specific device(s) in the set of all devices
