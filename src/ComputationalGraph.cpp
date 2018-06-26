@@ -74,7 +74,7 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
     for (const UniqueId& partUid : partsOfNet)
     {
         YAML::Node nodeYAML;
-        Hyperedges superClasses(instancesOf(Hyperedges{partUid}, "", TraversalDirection::DOWN));
+        Hyperedges superClasses(instancesOf(Hyperedges{partUid}, "", TraversalDirection::FORWARD));
         if (superClasses.empty())
         {
             std::cout << "No superclass for " << partUid << "\n";
@@ -92,7 +92,7 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
         Hyperedges interfaceUids(interfacesOf(Hyperedges{partUid}));
         for (const UniqueId& interfaceUid : interfaceUids)
         {
-            Hyperedges superClasses2(instancesOf(Hyperedges{interfaceUid}, "", TraversalDirection::DOWN));
+            Hyperedges superClasses2(instancesOf(Hyperedges{interfaceUid}, "", TraversalDirection::FORWARD));
             if (superClasses2.empty())
             {
                 std::cout << "No superclass for " << interfaceUid << "\n";
@@ -128,7 +128,7 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
         {
             YAML::Node edgeNodeYAML;
             Hyperedges otherInterfaceUids(endpointsOf(Hyperedges{interfaceUid}));
-            Hyperedges otherNodeUids(childrenOf(otherInterfaceUids, "", TraversalDirection::UP));
+            Hyperedges otherNodeUids(childrenOf(otherInterfaceUids, "", TraversalDirection::INVERSE));
             edgeNodeYAML["id"] = unique2nodeId[*otherNodeUids.begin()];
             edgeNodeYAML["port"] = unique2portId[*otherInterfaceUids.begin()];
             edgeNodesYAML.push_back(edgeNodeYAML);
