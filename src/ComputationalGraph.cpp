@@ -81,9 +81,9 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
             continue;
         }
         // Register but skip busses
-        if (superClasses.count("Simple::Computation::Bus::NDLComOverLVDS"))
+        if (std::find(superClasses.begin(), superClasses.end(), "Simple::Computation::Bus::NDLComOverLVDS") != superClasses.end())
         {
-            busses.insert(partUid);
+            busses = unite(busses, Hyperedges{partUid});
             continue;
         }
 
