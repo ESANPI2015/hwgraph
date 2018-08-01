@@ -1,25 +1,16 @@
 name: charlie
 nodes:
-#- id: 1
-#  name: x86
-#  type: CONVENTIONAL
-#  ports:
-#    - id: 0
-#      type: NDLCOM
-#      name: PORT1
-#- id: 4
-#  name: spine_board
-#  type: FPGA
-#  ports:
-#    - id: 0
-#      type: NDLCOM
-#      name: PORT1
-#    - id: 1
-#      type: NDLCOM
-#      name: PORT2
-- id: 106
-  name: bldc_joint
-  type: FPGA
+# Central Nodes
+- id: 1
+  name: ControlGUI
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: PORT1
+- id: 3
+  name: MotionController
+  type: CONVENTIONAL
   ports:
     - id: 0
       type: NDLCOM
@@ -28,35 +19,1067 @@ nodes:
       type: NDLCOM
       name: PORT2
     - id: 2
+      type: NDLCOM
+      name: PORT3
+    - id: 3
+      type: NDLCOM
+      name: PORT4
+    - id: 4
+      type: NDLCOM
+      name: PORT5
+    - id: 5
+      type: NDLCOM
+      name: PORT6
+# FLLeg
+- id: 10
+  name: FLHipJoint1
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLHipJoint1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLHipJoint1_PORT2
+    - id: 2
       type: SOURCE
-      name: angle
+      name: FLHipJoint1_angle
     - id: 3
       type: SOURCE
-      name: angleDot
+      name: FLHipJoint1_angleDot
     - id: 4
       type: SOURCE
-      name: temperature
+      name: FLHipJoint1_temperature
     - id: 5
       type: SOURCE
-      name: voltage
+      name: FLHipJoint1_voltage
     - id: 10
       type: SINK
-      name: pwm
-#- id: 105
-#  name: mdaq2
-#  type: CONVENTIONAL
-#  ports:
-#    - id: 0
-#      type: NDLCOM
-#      name: PORT1
-#    - id: 1
-#      type: NDLCOM
-#      name: PORT2
+      name: FLHipJoint1_angle
+    - id: 11
+      type: SINK
+      name: FLHipJoint1_angleDot
+- id: 11
+  name: FLHipJoint2
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLHipJoint2_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLHipJoint2_PORT2
+    - id: 2
+      type: SOURCE
+      name: FLHipJoint2_angle
+    - id: 3
+      type: SOURCE
+      name: FLHipJoint2_angleDot
+    - id: 4
+      type: SOURCE
+      name: FLHipJoint2_temperature
+    - id: 5
+      type: SOURCE
+      name: FLHipJoint2_voltage
+    - id: 10
+      type: SINK
+      name: FLHipJoint2_angle
+    - id: 11
+      type: SINK
+      name: FLHipJoint2_angleDot
+- id: 12
+  name: FLHipJoint3
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLHipJoint3_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLHipJoint3_PORT2
+    - id: 2
+      type: SOURCE
+      name: FLHipJoint3_angle
+    - id: 3
+      type: SOURCE
+      name: FLHipJoint3_angleDot
+    - id: 4
+      type: SOURCE
+      name: FLHipJoint3_temperature
+    - id: 5
+      type: SOURCE
+      name: FLHipJoint3_voltage
+    - id: 10
+      type: SINK
+      name: FLHipJoint3_angle
+    - id: 11
+      type: SINK
+      name: FLHipJoint3_angleDot
+- id: 13
+  name: FLKneeJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLKneeJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLKneeJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: FLKneeJoint_angle
+    - id: 3
+      type: SOURCE
+      name: FLKneeJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: FLKneeJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: FLKneeJoint_voltage
+    - id: 10
+      type: SINK
+      name: FLKneeJoint_angle
+    - id: 11
+      type: SINK
+      name: FLKneeJoint_angleDot
+- id: 14
+  name: FLAnkleJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLAnkleJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLAnkleJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: FLAnkleJoint_pitch
+    - id: 3
+      type: SOURCE
+      name: FLAnkleJoint_pitchDot
+    - id: 4
+      type: SOURCE
+      name: FLAnkleJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: FLAnkleJoint_voltage
+    - id: 6
+      type: SOURCE
+      name: FLAnkleJoint_roll
+    - id: 7
+      type: SOURCE
+      name: FLAnkleJoint_rollDot
+    - id: 10
+      type: SINK
+      name: FLAnkleJoint_pitch
+    - id: 11
+      type: SINK
+      name: FLAnkleJoint_pitchDot
+    - id: 12
+      type: SINK
+      name: FLAnkleJoint_roll
+    - id: 13
+      type: SINK
+      name: FLAnkleJoint_rollDot
+# FIXME: What sources and sinks do we need here?
+- id: 15
+  name: FLHandJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLHandJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLHandJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: FLHandJoint_angle
+    - id: 3
+      type: SOURCE
+      name: FLHandJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: FLHandJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: FLHandJoint_voltage
+    - id: 10
+      type: SINK
+      name: FLHandJoint_angle
+    - id: 11
+      type: SINK
+      name: FLHandJoint_angleDot
+- id: 16
+  name: FLFootSensorBoard1
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FLFootSensorBoard1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FLFootSensorBoard1_PORT2
+    # TODO: Add here some sources and sinks we could use (e.g. Forces)
+# FRLeg
+- id: 20
+  name: FRHipJoint1
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRHipJoint1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRHipJoint1_PORT2
+    - id: 2
+      type: SOURCE
+      name: FRHipJoint1_angle
+    - id: 3
+      type: SOURCE
+      name: FRHipJoint1_angleDot
+    - id: 4
+      type: SOURCE
+      name: FRHipJoint1_temperature
+    - id: 5
+      type: SOURCE
+      name: FRHipJoint1_voltage
+    - id: 10
+      type: SINK
+      name: FRHipJoint1_angle
+    - id: 11
+      type: SINK
+      name: FRHipJoint1_angleDot
+- id: 21
+  name: FRHipJoint2
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRHipJoint2_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRHipJoint2_PORT2
+    - id: 2
+      type: SOURCE
+      name: FRHipJoint2_angle
+    - id: 3
+      type: SOURCE
+      name: FRHipJoint2_angleDot
+    - id: 4
+      type: SOURCE
+      name: FRHipJoint2_temperature
+    - id: 5
+      type: SOURCE
+      name: FRHipJoint2_voltage
+    - id: 10
+      type: SINK
+      name: FRHipJoint2_angle
+    - id: 11
+      type: SINK
+      name: FRHipJoint2_angleDot
+- id: 22
+  name: FRHipJoint3
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRHipJoint3_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRHipJoint3_PORT2
+    - id: 2
+      type: SOURCE
+      name: FRHipJoint3_angle
+    - id: 3
+      type: SOURCE
+      name: FRHipJoint3_angleDot
+    - id: 4
+      type: SOURCE
+      name: FRHipJoint3_temperature
+    - id: 5
+      type: SOURCE
+      name: FRHipJoint3_voltage
+    - id: 10
+      type: SINK
+      name: FRHipJoint3_angle
+    - id: 11
+      type: SINK
+      name: FRHipJoint3_angleDot
+- id: 23
+  name: FRKneeJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRKneeJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRKneeJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: FRKneeJoint_angle
+    - id: 3
+      type: SOURCE
+      name: FRKneeJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: FRKneeJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: FRKneeJoint_voltage
+    - id: 10
+      type: SINK
+      name: FRKneeJoint_angle
+    - id: 11
+      type: SINK
+      name: FRKneeJoint_angleDot
+- id: 24
+  name: FRAnkleJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRAnkleJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRAnkleJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: FRAnkleJoint_pitch
+    - id: 3
+      type: SOURCE
+      name: FRAnkleJoint_pitchDot
+    - id: 4
+      type: SOURCE
+      name: FRAnkleJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: FRAnkleJoint_voltage
+    - id: 6
+      type: SOURCE
+      name: FRAnkleJoint_roll
+    - id: 7
+      type: SOURCE
+      name: FRAnkleJoint_rollDot
+    - id: 10
+      type: SINK
+      name: FRAnkleJoint_pitch
+    - id: 11
+      type: SINK
+      name: FRAnkleJoint_pitchDot
+    - id: 12
+      type: SINK
+      name: FRAnkleJoint_roll
+    - id: 13
+      type: SINK
+      name: FRAnkleJoint_rollDot
+# FIXME: What sources and sinks do we need here?
+- id: 25
+  name: FRHandJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRHandJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRHandJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: FRHandJoint_angle
+    - id: 3
+      type: SOURCE
+      name: FRHandJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: FRHandJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: FRHandJoint_voltage
+    - id: 10
+      type: SINK
+      name: FRHandJoint_angle
+    - id: 11
+      type: SINK
+      name: FRHandJoint_angleDot
+- id: 26
+  name: FRFootSensorBoard1
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: FRFootSensorBoard1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: FRFootSensorBoard1_PORT2
+    # TODO: Add here some sources and sinks we could use (e.g. Forces)
+# RLLeg
+- id: 30
+  name: RLHipJoint1
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLHipJoint1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLHipJoint1_PORT2
+    - id: 2
+      type: SOURCE
+      name: RLHipJoint1_angle
+    - id: 3
+      type: SOURCE
+      name: RLHipJoint1_angleDot
+    - id: 4
+      type: SOURCE
+      name: RLHipJoint1_temperature
+    - id: 5
+      type: SOURCE
+      name: RLHipJoint1_voltage
+    - id: 10
+      type: SINK
+      name: RLHipJoint1_angle
+    - id: 11
+      type: SINK
+      name: RLHipJoint1_angleDot
+- id: 31
+  name: RLHipJoint2
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLHipJoint2_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLHipJoint2_PORT2
+    - id: 2
+      type: SOURCE
+      name: RLHipJoint2_angle
+    - id: 3
+      type: SOURCE
+      name: RLHipJoint2_angleDot
+    - id: 4
+      type: SOURCE
+      name: RLHipJoint2_temperature
+    - id: 5
+      type: SOURCE
+      name: RLHipJoint2_voltage
+    - id: 10
+      type: SINK
+      name: RLHipJoint2_angle
+    - id: 11
+      type: SINK
+      name: RLHipJoint2_angleDot
+- id: 32
+  name: RLHipJoint3
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLHipJoint3_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLHipJoint3_PORT2
+    - id: 2
+      type: SOURCE
+      name: RLHipJoint3_angle
+    - id: 3
+      type: SOURCE
+      name: RLHipJoint3_angleDot
+    - id: 4
+      type: SOURCE
+      name: RLHipJoint3_temperature
+    - id: 5
+      type: SOURCE
+      name: RLHipJoint3_voltage
+    - id: 10
+      type: SINK
+      name: RLHipJoint3_angle
+    - id: 11
+      type: SINK
+      name: RLHipJoint3_angleDot
+- id: 33
+  name: RLKneeJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLKneeJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLKneeJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: RLKneeJoint_angle
+    - id: 3
+      type: SOURCE
+      name: RLKneeJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: RLKneeJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: RLKneeJoint_voltage
+    - id: 10
+      type: SINK
+      name: RLKneeJoint_angle
+    - id: 11
+      type: SINK
+      name: RLKneeJoint_angleDot
+- id: 34
+  name: RLAnkleJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLAnkleJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLAnkleJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: RLAnkleJoint_pitch
+    - id: 3
+      type: SOURCE
+      name: RLAnkleJoint_pitchDot
+    - id: 4
+      type: SOURCE
+      name: RLAnkleJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: RLAnkleJoint_voltage
+    - id: 6
+      type: SOURCE
+      name: RLAnkleJoint_roll
+    - id: 7
+      type: SOURCE
+      name: RLAnkleJoint_rollDot
+    - id: 10
+      type: SINK
+      name: RLAnkleJoint_pitch
+    - id: 11
+      type: SINK
+      name: RLAnkleJoint_pitchDot
+    - id: 12
+      type: SINK
+      name: RLAnkleJoint_roll
+    - id: 13
+      type: SINK
+      name: RLAnkleJoint_rollDot
+# FIXME: What sources and sinks do we need here?
+- id: 35
+  name: RLToeJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLToeJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLToeJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: RLToeJoint_angle
+    - id: 3
+      type: SOURCE
+      name: RLToeJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: RLToeJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: RLToeJoint_voltage
+    - id: 10
+      type: SINK
+      name: RLToeJoint_angle
+    - id: 11
+      type: SINK
+      name: RLToeJoint_angleDot
+- id: 36
+  name: RLFootSensorBoard1
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLFootSensorBoard1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLFootSensorBoard1_PORT2
+    # TODO: Add here some sources and sinks we could use (e.g. Forces)
+- id: 37
+  name: RLFootSensorBoard2
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RLFootSensorBoard2_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RLFootSensorBoard2_PORT2
+# RRLeg
+- id: 40
+  name: RRHipJoint1
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRHipJoint1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRHipJoint1_PORT2
+    - id: 2
+      type: SOURCE
+      name: RRHipJoint1_angle
+    - id: 3
+      type: SOURCE
+      name: RRHipJoint1_angleDot
+    - id: 4
+      type: SOURCE
+      name: RRHipJoint1_temperature
+    - id: 5
+      type: SOURCE
+      name: RRHipJoint1_voltage
+    - id: 10
+      type: SINK
+      name: RRHipJoint1_angle
+    - id: 11
+      type: SINK
+      name: RRHipJoint1_angleDot
+- id: 41
+  name: RRHipJoint2
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRHipJoint2_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRHipJoint2_PORT2
+    - id: 2
+      type: SOURCE
+      name: RRHipJoint2_angle
+    - id: 3
+      type: SOURCE
+      name: RRHipJoint2_angleDot
+    - id: 4
+      type: SOURCE
+      name: RRHipJoint2_temperature
+    - id: 5
+      type: SOURCE
+      name: RRHipJoint2_voltage
+    - id: 10
+      type: SINK
+      name: RRHipJoint2_angle
+    - id: 11
+      type: SINK
+      name: RRHipJoint2_angleDot
+- id: 42
+  name: RRHipJoint3
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRHipJoint3_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRHipJoint3_PORT2
+    - id: 2
+      type: SOURCE
+      name: RRHipJoint3_angle
+    - id: 3
+      type: SOURCE
+      name: RRHipJoint3_angleDot
+    - id: 4
+      type: SOURCE
+      name: RRHipJoint3_temperature
+    - id: 5
+      type: SOURCE
+      name: RRHipJoint3_voltage
+    - id: 10
+      type: SINK
+      name: RRHipJoint3_angle
+    - id: 11
+      type: SINK
+      name: RRHipJoint3_angleDot
+- id: 43
+  name: RRKneeJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRKneeJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRKneeJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: RRKneeJoint_angle
+    - id: 3
+      type: SOURCE
+      name: RRKneeJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: RRKneeJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: RRKneeJoint_voltage
+    - id: 10
+      type: SINK
+      name: RRKneeJoint_angle
+    - id: 11
+      type: SINK
+      name: RRKneeJoint_angleDot
+- id: 44
+  name: RRAnkleJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRAnkleJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRAnkleJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: RRAnkleJoint_pitch
+    - id: 3
+      type: SOURCE
+      name: RRAnkleJoint_pitchDot
+    - id: 4
+      type: SOURCE
+      name: RRAnkleJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: RRAnkleJoint_voltage
+    - id: 6
+      type: SOURCE
+      name: RRAnkleJoint_roll
+    - id: 7
+      type: SOURCE
+      name: RRAnkleJoint_rollDot
+    - id: 10
+      type: SINK
+      name: RRAnkleJoint_pitch
+    - id: 11
+      type: SINK
+      name: RRAnkleJoint_pitchDot
+    - id: 12
+      type: SINK
+      name: RRAnkleJoint_roll
+    - id: 13
+      type: SINK
+      name: RRAnkleJoint_rollDot
+# FIXME: What sources and sinks do we need here?
+- id: 45
+  name: RRToeJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRToeJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRToeJoint_PORT2
+    - id: 2
+      type: SOURCE
+      name: RRToeJoint_angle
+    - id: 3
+      type: SOURCE
+      name: RRToeJoint_angleDot
+    - id: 4
+      type: SOURCE
+      name: RRToeJoint_temperature
+    - id: 5
+      type: SOURCE
+      name: RRToeJoint_voltage
+    - id: 10
+      type: SINK
+      name: RRToeJoint_angle
+    - id: 11
+      type: SINK
+      name: RRToeJoint_angleDot
+- id: 46
+  name: RRFootSensorBoard1
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRFootSensorBoard1_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRFootSensorBoard1_PORT2
+    # TODO: Add here some sources and sinks we could use (e.g. Forces)
+- id: 47
+  name: RRFootSensorBoard2
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: RRFootSensorBoard2_PORT1
+    - id: 1
+      type: NDLCOM
+      name: RRFootSensorBoard2_PORT2
+# The SPINE and the SPINE sensor board
+- id: 50
+  name: SpineJoint
+  type: FPGA
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: SpineJoint_PORT1
+    - id: 1
+      type: NDLCOM
+      name: SpineJoint_PORT2
+    # TODO: Sources and Sinks?
+- id: 51
+  name: SpineSensorBoard
+  type: CONVENTIONAL
+  ports:
+    - id: 0
+      type: NDLCOM
+      name: SpineSensorBoard_PORT1
+    - id: 1
+      type: NDLCOM
+      name: SpineSensorBoard_PORT2
+    # TODO: Sources and Sinks?
 edges:
-#- id: 1
-#  name: x86_to_bldc
-#  nodes:
-#  - id: 1
-#    port: 0
-#  - id: 106
-#    port: 0
+# Central connections
+- id: 1
+  name: ControlGUI_2_MotionController
+  nodes:
+  - id: 1
+    port: 0
+  - id: 3
+    port: 0
+# Front Left Leg connections
+- id: 10
+  name: MotionController_2_FLLeg
+  nodes:
+  - id: 3
+    port: 1
+  - id: 10
+    port: 0
+- id: 11
+  name: FLHipJoint1_2_FLHipJoint2
+  nodes:
+  - id: 10
+    port: 1
+  - id: 11
+    port: 0
+- id: 12
+  name: FLHipJoint2_2_FLHipJoint3
+  nodes:
+  - id: 11
+    port: 1
+  - id: 12
+    port: 0
+- id: 13
+  name: FLHipJoint3_2_FLKneeJoint
+  nodes:
+  - id: 12
+    port: 1
+  - id: 13
+    port: 0
+- id: 14
+  name: FLKneeJoint_2_FLAnkleJoint
+  nodes:
+  - id: 13
+    port: 1
+  - id: 14
+    port: 0
+- id: 15
+  name: FLAnkleJoint_2_FLHandJoint
+  nodes:
+  - id: 14
+    port: 1
+  - id: 15
+    port: 0
+- id: 16
+  name: FLHandJoint_2_FLFootSensorBoard1
+  nodes:
+  - id: 15
+    port: 1
+  - id: 16
+    port: 0
+# Front Right Leg connections
+- id: 20
+  name: MotionController_2_FRLeg
+  nodes:
+  - id: 3
+    port: 2
+  - id: 20
+    port: 0
+- id: 21
+  name: FRHipJoint1_2_FRHipJoint2
+  nodes:
+  - id: 20
+    port: 1
+  - id: 21
+    port: 0
+- id: 22
+  name: FRHipJoint2_2_FRHipJoint3
+  nodes:
+  - id: 21
+    port: 1
+  - id: 22
+    port: 0
+- id: 23
+  name: FRHipJoint3_2_FRKneeJoint
+  nodes:
+  - id: 22
+    port: 1
+  - id: 23
+    port: 0
+- id: 24
+  name: FRKneeJoint_2_FRAnkleJoint
+  nodes:
+  - id: 23
+    port: 1
+  - id: 24
+    port: 0
+- id: 25
+  name: FRAnkleJoint_2_FRHandJoint
+  nodes:
+  - id: 24
+    port: 1
+  - id: 25
+    port: 0
+- id: 26
+  name: FRHandJoint_2_FRFootSensorBoard1
+  nodes:
+  - id: 25
+    port: 1
+  - id: 26
+    port: 0
+# Rear Left Leg connections
+- id: 30
+  name: MotionController_2_RLLeg
+  nodes:
+  - id: 3
+    port: 3
+  - id: 30
+    port: 0
+- id: 31
+  name: RLHipJoint1_2_RLHipJoint2
+  nodes:
+  - id: 30
+    port: 1
+  - id: 31
+    port: 0
+- id: 32
+  name: RLHipJoint2_2_RLHipJoint3
+  nodes:
+  - id: 31
+    port: 1
+  - id: 32
+    port: 0
+- id: 33
+  name: RLHipJoint3_2_RLKneeJoint
+  nodes:
+  - id: 32
+    port: 1
+  - id: 33
+    port: 0
+- id: 34
+  name: RLKneeJoint_2_RLAnkleJoint
+  nodes:
+  - id: 33
+    port: 1
+  - id: 34
+    port: 0
+- id: 35
+  name: RLAnkleJoint_2_RLToeJoint
+  nodes:
+  - id: 34
+    port: 1
+  - id: 35
+    port: 0
+- id: 36
+  name: RLToeJoint_2_RLFootSensorBoard1
+  nodes:
+  - id: 35
+    port: 1
+  - id: 36
+    port: 0
+- id: 37
+  name: RLFootSensorBoard1_2_RLFootSensorBoard2
+  nodes:
+  - id: 36
+    port: 1
+  - id: 37
+    port: 0
+# Rear Right Leg connections
+- id: 40
+  name: MotionController_2_RRLeg
+  nodes:
+  - id: 3
+    port: 4
+  - id: 40
+    port: 0
+- id: 41
+  name: RRHipJoint1_2_RRHipJoint2
+  nodes:
+  - id: 40
+    port: 1
+  - id: 41
+    port: 0
+- id: 42
+  name: RRHipJoint2_2_RRHipJoint3
+  nodes:
+  - id: 41
+    port: 1
+  - id: 42
+    port: 0
+- id: 43
+  name: RRHipJoint3_2_RRKneeJoint
+  nodes:
+  - id: 42
+    port: 1
+  - id: 43
+    port: 0
+- id: 44
+  name: RRKneeJoint_2_RRAnkleJoint
+  nodes:
+  - id: 43
+    port: 1
+  - id: 44
+    port: 0
+- id: 45
+  name: RRAnkleJoint_2_RRToeJoint
+  nodes:
+  - id: 44
+    port: 1
+  - id: 45
+    port: 0
+- id: 46
+  name: RRToeJoint_2_RRFootSensorBoard1
+  nodes:
+  - id: 45
+    port: 1
+  - id: 46
+    port: 0
+- id: 47
+  name: RRFootSensorBoard1_2_RRFootSensorBoard2
+  nodes:
+  - id: 46
+    port: 1
+  - id: 47
+    port: 0
+# Spine branch
+- id: 50
+  name: MotionController_2_Spine
+  nodes:
+  - id: 3
+    port: 5
+  - id: 50
+    port: 0
+- id: 51
+  name: SpineJoint_2_SpineSensorBoard
+  nodes:
+  - id: 50
+    port: 1
+  - id: 51
+    port: 0
