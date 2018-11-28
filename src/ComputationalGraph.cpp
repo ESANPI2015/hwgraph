@@ -65,8 +65,10 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
     std::map< std::string, std::map< std::string, Hyperedges> > old2newPort;
     std::stringstream ss;
     YAML::Node spec;
-    spec["name"] = get(uid)->label();
+    if (!exists(uid))
+        return std::string();
 
+    spec["name"] = read(uid).label();
     // Store parts
     Hyperedges partsOfNet(componentsOf(Hyperedges{uid}));
     Hyperedges busses;
@@ -99,19 +101,19 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
                 continue;
             }
             YAML::Node portYAML;
-            const unsigned portId(idFromLabel(get(interfaceUid)->label()));
+            const unsigned portId(idFromLabel(read(interfaceUid).label()));
             portYAML["id"] = portId;
-            portYAML["name"] = nameFromLabel(get(interfaceUid)->label());
-            portYAML["type"] = get(*superClasses2.begin())->label();
+            portYAML["name"] = nameFromLabel(read(interfaceUid).label());
+            portYAML["type"] = read(*superClasses2.begin()).label();
             portsYAML.push_back(portYAML);
             unique2portId[interfaceUid] = portId;
         }
 
         // Store node
-        const unsigned nodeId(idFromLabel(get(partUid)->label()));
+        const unsigned nodeId(idFromLabel(read(partUid).label()));
         nodeYAML["id"] = nodeId;
-        nodeYAML["name"] = nameFromLabel(get(partUid)->label());
-        nodeYAML["type"] = get(*superClasses.begin())->label();
+        nodeYAML["name"] = nameFromLabel(read(partUid).label());
+        nodeYAML["type"] = read(*superClasses.begin()).label();
         nodesYAML.push_back(nodeYAML);
         unique2nodeId[partUid] = nodeId;
     }
@@ -133,8 +135,8 @@ std::string Computation::domainSpecificExport(const UniqueId& uid)
             edgeNodeYAML["port"] = unique2portId[*otherInterfaceUids.begin()];
             edgeNodesYAML.push_back(edgeNodeYAML);
         }
-        edgeYAML["id"] = idFromLabel(get(busUid)->label());
-        edgeYAML["name"] = nameFromLabel(get(busUid)->label());
+        edgeYAML["id"] = idFromLabel(read(busUid).label());
+        edgeYAML["name"] = nameFromLabel(read(busUid).label());
         edgesYAML.push_back(edgeYAML);
     }
 
